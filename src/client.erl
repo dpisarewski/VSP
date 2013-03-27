@@ -1,7 +1,7 @@
 %% Copyright
 -module(client).
 -author("denisfleischhauer").
-
+%%TEST
 %% API
 -export([start/1]).
 
