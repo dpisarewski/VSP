@@ -13,7 +13,7 @@ start(Name) ->
 loop([HBQ, DQ, Sender, Manager], N) ->
 	receive
 		{getmsgid, Pid} ->
-			Pid ! {messageid,N},
+			Pid ! {nnr, N},
 			loop([HBQ, DQ, Sender, Manager], N+1);
 		{getmessages, Pid} ->
 			Sender ! {send_messages, Pid},

@@ -6,7 +6,7 @@
 -export([start/1]).
 
 start(ServerPID) ->
-  {ok, ConfigListe} = file:consult("cfg/client.cfg"),
+  {ok, ConfigListe} = file:consult("client.cfg"),
   {ok, LogDatei} = werkzeug:get_config_value(log_datei, ConfigListe),
 
   spawn(fun() -> simulation(5, ServerPID, LogDatei) end)
@@ -23,8 +23,7 @@ simulation(AnzahlSchritte, ServerPID, LogDatei) ->
       Praktikumsgruppe = "1",
       Teamnummer = "06",
       Systemsendezeit = werkzeug:timeMilliSecond(),
-      Nachricht = "0-client@"
-        ++Hostname++Praktikumsgruppe++Teamnummer++" : "++Number++"te Nachricht "++Systemsendezeit++"\n",
+      Nachricht = lists:concat(["0-client@", Hostname, Praktikumsgruppe, Teamnummer, " : ", Number, "te Nachricht ", Systemsendezeit, "\n"]),
 
       ServerPID ! {dropmessage, {Nachricht, Number}},
       werkzeug:logging(LogDatei,"-Client: Nachricht: " ++integer_to_list(Number)++ " an " ++pid_to_list(ServerPID)++ " gesendet\n")
