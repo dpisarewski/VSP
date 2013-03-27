@@ -19,6 +19,6 @@ send_messages([], _) ->
 send_messages(Messages, Pid) ->
 	[Message | Tail] 	= Messages,
 	{Number, Nachricht} = Message,
-	Pid ! {reply, Number, Nachricht, Tail == []}
+	Pid ! {reply, Number, Nachricht, true}
 	%send_messages(Tail, Pid)
 .

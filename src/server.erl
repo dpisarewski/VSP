@@ -28,13 +28,12 @@ loop([HBQ, DQ, Sender, Manager], N, ClientList) ->
 
 client_list(ClientList) ->
   receive
-    {new_client, ClientPID} ->                                   %% Traegt neue Client in die ClientListe. Nr = 0, weil Client neu ist.
-      %% ClientList erhaelt die Tupeln {ClientPID, Nr}, wo "Nr" die Nummer der letzte empfangene Nachricht ist.
+    {new_client, ClientPID} ->                                    %% Traegt neue Client in die ClientListe. Nr = 0, weil Client neu ist.
+                                                                  %% ClientList erhaelt die Tupeln {ClientPID, Nr}, wo "Nr" die Nummer der letzte empfangene Nachricht ist.
       tools:stdout("Client " ++ werkzeug:to_String(ClientPID) ++ " war erfolgreich in der Liste hinzugefuegt.~n"),
       client_list(lists:append(ClientList, [{ClientPID, 0}]));
 
     {delete_client, ClientPID} ->
-      %%NewClientList = delete_client_with_pid(ClientList, ClientPID),
       tools:stdout("Client " ++ werkzeug:to_String(ClientPID) ++ " war erfolgreich aus der Liste entfernt.~n"),
       client_list(delete_client_with_pid(ClientList, ClientPID));
 
