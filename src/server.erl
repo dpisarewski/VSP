@@ -8,8 +8,13 @@ start(Name) ->
   Sender          = spawn(fun() -> sender:send_func(DQ) end),
   ClientManager   = spawn(fun() -> client_manager:loop([]) end),
   Server          = spawn(fun() -> loop([HBQ, DQ, Sender, Manager], 1, ClientManager) end),
-  %register(Name, Server),
-  {Server, ClientManager}
+  tools:reregister(Name, Server),
+  tools:reregister(hbq, HBQ),
+  tools:reregister(dq, DQ),
+  tools:reregister(manager, Manager),
+  tools:reregister(sender, Sender),
+  tools:reregister(client_manager, ClientManager),
+  Server
 .
 
 loop([HBQ, DQ, Sender, Manager], N, ClientManager) ->

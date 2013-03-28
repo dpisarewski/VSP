@@ -14,7 +14,7 @@ loop(ClientList) ->
 
     {increment_message_number, ClientPID} ->
       {_, CurrentNumber} = lists:keyfind(ClientPID, 1, ClientList),
-      tools:stdout("Nachrichtennummer fuer Client " ++ werkzeug:to_String(ClientPID) ++ " inkrementiert"),
+      tools:stdout("Nachrichtennummer fuer Client " ++ werkzeug:to_String(ClientPID) ++ " inkrementiert~n"),
       loop(lists:keyreplace(ClientPID, 1, ClientList, {ClientPID, CurrentNumber + 1}));
 
     {next_message_number, ServerPID, ClientPID} ->                           %% Gibt die Nummer der letzte an den Client gesendete Nachricht.
