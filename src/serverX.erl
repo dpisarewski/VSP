@@ -1,5 +1,5 @@
 %% Copyright
--module(server).
+-module(serverX).
 -author("denisfleischhauer").
 
 %% API
