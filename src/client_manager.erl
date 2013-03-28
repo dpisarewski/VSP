@@ -3,29 +3,29 @@
 
 loop(ClientList) ->
   receive
-    {new_client, ClientPID} ->                                    %% Traegt neue Client in die ClientListe. Nr = 0, weil Client neu ist.
+    {subscribe_client, ClientPID} ->                                    %% Traegt neue Client in die ClientListe. Nr = 0, weil Client neu ist.
                                                                   %% ClientList erhaelt die Tupeln {ClientPID, Nr}, wo "Nr" die Nummer der letzte empfangene Nachricht ist.
-      tools:stdout("Client " ++ werkzeug:to_String(ClientPID) ++ " war erfolgreich in der Liste hinzugefuegt.~n"),
+      tools:stdout("Client " ++ werkzeug:to_String(ClientPID) ++ " ist in die Liste eingefuegt.~n"),
       loop(lists:append(ClientList, [{ClientPID, 0}]));
 
-    {delete_client, ClientPID} ->
-      tools:stdout("Client " ++ werkzeug:to_String(ClientPID) ++ " war erfolgreich aus der Liste entfernt.~n"),
+    {unsubscribe_client, ClientPID} ->
+      tools:stdout("Client " ++ werkzeug:to_String(ClientPID) ++ " ist aus der Liste entfernt.~n"),
       loop(delete_client_with_pid(ClientList, ClientPID));
 
-    {client_erhalten, ClientPID} ->                               %% Prueft ob Client in der Liste ist.
+    {increment_message_number, ClientPID} ->
+      {_, CurrentNumber} = lists:keyfind(ClientPID, 1, ClientList),
+      tools:stdout("Nachrichtennummer fuer Client " ++ werkzeug:to_String(ClientPID) ++ " inkrementiert"),
+      loop(lists:keyreplace(ClientPID, 1, ClientList, {ClientPID, CurrentNumber + 1}));
 
-      loop(ClientList);
-
-    {getmsgnr, ServerPID, ClientPID} ->                           %% Gibt die Nummer der letzte an den Client gesendete Nachricht.
+    {next_message_number, ServerPID, ClientPID} ->                           %% Gibt die Nummer der letzte an den Client gesendete Nachricht.
       Client = find_client(ClientList, ClientPID),
-      {_, Nr} = Client,
-      ServerPID ! {ClientPID, Nr},
-      tools:stdout("Client " ++ werkzeug:to_String(ClientPID) ++ " hat die letzte Nachricht mit der Nummer " ++ werkzeug:to_String(Nr) ++ " empfangen.~n"),
+      {_, Number} = Client,
+      ServerPID ! {next_message_number, ClientPID, Number},
+      tools:stdout("Client " ++ werkzeug:to_String(ClientPID) ++ " hat die letzte Nachricht mit der Nummer " ++ werkzeug:to_String(Number) ++ " empfangen.~n"),
       loop(ClientList);
 
-    {zeige_client_list} ->
-      Text = werkzeug:to_String(ClientList),
-      tools:stdout(Text),
+    {get_client_list, Pid} ->
+      Pid ! {client_list, ClientList},
       loop(ClientList)
   end
 .
