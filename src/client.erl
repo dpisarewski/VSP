@@ -74,8 +74,7 @@ sendeNachricht(ServerPID, LogDatei, AnzahlSchritte, Sendeintervall, ClientNummer
   NachrichtenSammler ! {add, gesendete, Number},
   timer:sleep(berechneIntervall(Sendeintervall)),
 
-  sendeNachricht(ServerPID, LogDatei, AnzahlSchritte-1, Sendeintervall, ClientNummer, NachrichtenSammler);
-sendeNachricht(ServerPID, _, _, _, _, _) -> ServerPID
+  sendeNachricht(ServerPID, LogDatei, AnzahlSchritte-1, Sendeintervall, ClientNummer, NachrichtenSammler)
 .
 
 berechneIntervall(Intervall) ->
