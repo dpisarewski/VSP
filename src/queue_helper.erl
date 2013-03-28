@@ -5,9 +5,9 @@
 queue(Queue) ->
 	receive
 		{push, {Number, Text}} ->
-			queue(dict:store(Number, Text, Queue));
+			queue(lists:append(Queue, [{Number, Text}]));
 		{append, Messages}->
-			queue(dict:merge(fun(_, V, _) -> V end, Queue, Messages));
+			queue(lists:append(Queue, Messages));
 		{getall, Pid, Arguments} ->
 			Pid ! {values, Queue, Arguments},
       queue(Queue);

@@ -8,8 +8,8 @@ manager([HBQ, DQ])->
       HBQ ! {getall, self(), []},
       manager([HBQ, DQ]);
     {values, Messages, _}->
-      tools:stdout("received messages from HBQ~n"),
       DQ ! {append, Messages},
+      tools:stdout("added message to DQ~n"),
       manager([HBQ, DQ])
   end
 .
