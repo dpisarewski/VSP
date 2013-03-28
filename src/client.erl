@@ -12,75 +12,70 @@ start(ServerPID, ClientNummer) ->
   {ok, AnzahlSchritte} = werkzeug:get_config_value(anzahl_schritte, ConfigListe),
   {ok, LifeTime} = werkzeug:get_config_value(life_time, ConfigListe),
 
-  NachrichtenSammler = spawn(fun() -> nachrichtenNummern([],[]) end),
-  register(nSammer, NachrichtenSammler),
-  ClientPID = spawn(fun() -> simulation(AnzahlSchritte, ServerPID, LogDatei, Sendeintervall, ClientNummer) end),
+  NachrichtenSammler = spawn(fun() -> nachrichtenNummern([],[1],LogDatei) end),
+  ClientPID = spawn(fun() -> simulation(AnzahlSchritte, ServerPID, LogDatei, Sendeintervall, ClientNummer, NachrichtenSammler) end),
   ClientPID ! stop,
   receive
     stop -> stop
   after (LifeTime) ->
-    werkzeug:logging(LogDatei,"-Client: beendet"),
+    werkzeug:logging(LogDatei,"\n-Client: beendet"),
     exit(ClientPID, kill)
   end,
   ClientPID
 .
 
 
-simulation(AnzahlSchritte, ServerPID, LogDatei, Sendeintervall, ClientNummer) ->
+simulation(AnzahlSchritte, ServerPID, LogDatei, Sendeintervall, ClientNummer, NachrichtenSammler) ->
 
-  sendeNachricht(ServerPID, LogDatei, AnzahlSchritte, Sendeintervall, ClientNummer),
+  sendeNachricht(ServerPID, LogDatei, AnzahlSchritte, Sendeintervall, ClientNummer, NachrichtenSammler),
 
   ServerPID ! {getmsgid, self()},
   receive {nnr, Number} -> Number end,
 
-  werkzeug:logging(LogDatei, integer_to_list(Number) ++ "te_Nachricht um " ++ werkzeug:timeMilliSecond() ++ " vergessen zu senden ******\n"),
+  werkzeug:logging(LogDatei, "\n" ++ integer_to_list(ClientNummer) ++ "-client : " ++ integer_to_list(Number) ++ "te_Nachricht um " ++ werkzeug:timeMilliSecond() ++ " vergessen zu senden!!!"),
 
-  frageNeueNachrichtenAb(ServerPID, 1, LogDatei, false),
+  frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler),
 
-  simulation(AnzahlSchritte, ServerPID, LogDatei, Sendeintervall, ClientNummer)
+  simulation(AnzahlSchritte, ServerPID, LogDatei, Sendeintervall, ClientNummer, NachrichtenSammler)
 .
 
-frageNeueNachrichtenAb(ServerPID, LetzteNachricht, LogDatei, NichtTerminated) when NichtTerminated == false ->
-  ServerPID ! {getmessages, LetzteNachricht},
-  werkzeug:logging(LogDatei,"-Client: " ++ integer_to_list(LetzteNachricht) ++ "te_Nachricht von Server angefragt\n"),
-
+frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler) ->
+  ServerPID ! {getmessages, self()},
   receive
     {reply, Number, Nachricht, Terminated} ->
-      nSamler ! {istEigeneNachricht, Number, self()},
-      receive Flag -> Flag end,
+      NachrichtenSammler ! {add, empfangene, Number},
 
-      if
-        Flag == ok ->
-          NeueNachricht = lists:concat(Nachricht,"******");
-        true ->
-          NeueNachricht = Nachricht
+      NachrichtenSammler ! {istEigeneNachricht, Number, self()},
+      receive
+        ok -> NeueNachricht = Nachricht ++ "C In: " ++ werkzeug:timeMilliSecond() ++ "******";
+        nok -> NeueNachricht = Nachricht ++ "C In: " ++ werkzeug:timeMilliSecond()
       end,
-      werkzeug:logging(LogDatei,"-Client: " ++ integer_to_list(Number) ++ "te_Nachricht um "
-        ++ werkzeug:timeMilliSecond() ++ " mit Inhalt: " ++ NeueNachricht ++ " von Server empfangen\n"),
-      frageNeueNachrichtenAb(ServerPID, LetzteNachricht, LogDatei, Terminated)
-  end,
 
-  frageNeueNachrichtenAb(ServerPID, LetzteNachricht, LogDatei, Terminated);
-  frageNeueNachrichtenAb(ServerPID, _, _, _) -> ServerPID ! done
+      werkzeug:logging(LogDatei, NeueNachricht),
+
+      case Terminated of
+        true -> {reply, Number, NeueNachricht, Terminated};
+        false -> frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler)
+      end
+  end
 .
 
-sendeNachricht(ServerPID, LogDatei, AnzahlSchritte, Sendeintervall, ClientNummer) when AnzahlSchritte > 0 ->
+sendeNachricht(ServerPID, LogDatei, AnzahlSchritte, Sendeintervall, ClientNummer, NachrichtenSammler) when AnzahlSchritte > 0 ->
   ServerPID ! {getmsgid, self()},
 
-  receive
-    {nnr, Number} -> Number
-  end,
+  receive {nnr, Number} -> Number end,
 
   {ok, Hostname} = inet:gethostname(),
-  Nachricht = lists:concat([ClientNummer, "-client@", Hostname, "2", "06", " : ", Number, "te Nachricht. C Out: ", werkzeug:timeMilliSecond(), "gesendet\n"]),
+  Nachricht = lists:concat(["\n", ClientNummer, "-client@", Hostname, "2", "06", " : ", Number, "te Nachricht. C Out: ", werkzeug:timeMilliSecond()]),
 
   ServerPID ! {dropmessage, {Nachricht, Number}},
   werkzeug:logging(LogDatei, Nachricht),
 
+  NachrichtenSammler ! {add, gesendete, Number},
   timer:sleep(berechneIntervall(Sendeintervall)),
 
-  sendeNachricht(ServerPID, LogDatei, AnzahlSchritte-1, Sendeintervall, ClientNummer);
-  sendeNachricht(ServerPID, _, _, _, _) -> ServerPID ! done
+  sendeNachricht(ServerPID, LogDatei, AnzahlSchritte-1, Sendeintervall, ClientNummer, NachrichtenSammler);
+sendeNachricht(ServerPID, _, _, _, _, _) -> ServerPID
 .
 
 berechneIntervall(Intervall) ->
@@ -98,27 +93,29 @@ berechneIntervall(Intervall) ->
   NeuerIntervall
 .
 
-nachrichtenNummern(Gesendete, Empfangene) ->
+nachrichtenNummern(Gesendete, Empfangene, LogDatei) ->
   receive
     {add, gesendete, Nummer} ->
-      NeueGesendete = [ Nummer | Gesendete],
-      nachrichtenNummern(NeueGesendete, Empfangene);
+      NeueGesendete = [Nummer | Gesendete],
+      nachrichtenNummern(NeueGesendete, Empfangene, LogDatei);
 
     {add, empfangene, Nummer} ->
-      NeueEmpfangene = [ Nummer | Empfangene],
-      nachrichtenNummern(Gesendete, NeueEmpfangene);
-
-    {getLetzteNummerEmpfangene, Absender} ->
-      [Head | _] = Empfangene,
-      Absender ! Head,
-      nachrichtenNummern(Gesendete, Empfangene);
+      NeueEmpfangene = [Nummer | Empfangene],
+      nachrichtenNummern(Gesendete, NeueEmpfangene, LogDatei);
 
     {istEigeneNachricht, Nummer, Absender} ->
-      Flag = lists:keyfind(Nummer,1,Gesendete),
+      Flag = listFind(Nummer, Gesendete),
       if
-        Flag == false -> Absender ! nok;
-        true ->  Absender ! ok
+        Flag == true -> Absender ! ok;
+        Flag == false ->  Absender ! nok
       end,
-      nachrichtenNummern(Gesendete, Empfangene)
+      nachrichtenNummern(Gesendete, Empfangene, LogDatei)
   end
-.  
+.
+
+listFind ( _, [] ) -> false;
+listFind ( Element, [ Item | ListTail ] ) ->
+  case ( Item == Element ) of
+    true    ->  true;
+    false   ->  listFind(Element, ListTail)
+  end.

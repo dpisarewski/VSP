@@ -1,0 +1,4 @@
+c(client).
+c(server).
+S = server:start().
+client:start(S,1).

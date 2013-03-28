@@ -19,8 +19,8 @@ start() ->
   DLQ       = spawn(fun() -> deliveryQueue([], LogDatei, DLQGroesse, 1) end),
   register(dlq, DLQ),
 
-  %CMgr      = spawn(fun() -> clientManager(orddict:new()) end),
-  %register(cmgr, CMgr),
+%CMgr      = spawn(fun() -> clientManager(orddict:new()) end),
+%register(cmgr, CMgr),
 
   ServerPID = spawn(fun() -> loop(LogDatei) end),
   register(wk,ServerPID),
@@ -31,19 +31,20 @@ start() ->
 loop(LogDatei) ->
   receive
     {getmessages, ClientPID} ->
-                  dlq ! {getmsg, ClientPID},
-                  werkzeug:logging(LogDatei,"+Server: Nachrichten von "++werkzeug:to_String(ClientPID)++ " angefragt\n"),
-                  loop(LogDatei);
+      hbq ! {getmsg, ClientPID},
+      werkzeug:logging(LogDatei,"\n+Server: Nachrichten von "++werkzeug:to_String(ClientPID)++ " angefragt"),
+      loop(LogDatei);
 
     {dropmessage, {Nachricht, Number}} ->
-                  hbq ! {add, Nachricht, Number},
-                  loop(LogDatei);
+      hbq ! {add, Nachricht, Number},
+      loop(LogDatei);
 
     {getmsgid, AbsenderPID} ->
-                  ngen ! {nnr, AbsenderPID},
-                  loop(LogDatei)
+      ngen ! {nnr, AbsenderPID},
+      loop(LogDatei)
   end
 .
+
 
 naechsteNummer(AktuelleNummer, LogDatei) ->
   receive
@@ -56,9 +57,14 @@ naechsteNummer(AktuelleNummer, LogDatei) ->
 holdBackQueue(Queue, LogDatei, DLQGroesse) ->
   receive
     {add, Nachricht, Number} ->
-      NeueNachricht = lists:concat([Nachricht, " HBQ: ", werkzeug:timeMilliSecond()]),
+      NeueNachricht = lists:concat(["\n",Nachricht, " HBQ: ", werkzeug:timeMilliSecond()]),
 
-      holdBackQueue([{Number, NeueNachricht} | Queue], LogDatei, DLQGroesse)
+      holdBackQueue([{Number, NeueNachricht} | Queue], LogDatei, DLQGroesse);
+    {getmsg, AbsenderPID} ->
+%TODO
+      werkzeug:logging(LogDatei,"\n-Server: in der HBQ"),
+      AbsenderPID ! {reply,1,"\n1-client@MacBook-Pro206 : 10te Nachricht. C Out: 28.03 15:34:31,054|" ++ "HBQ In: " ++ werkzeug:timeMilliSecond(),true},
+      holdBackQueue(Queue, LogDatei, DLQGroesse)
   end
 .
 
@@ -68,12 +74,12 @@ deliveryQueue(Queue, LogDatei, DLQGroesse, LetzteMsgNr) ->
       NeueNachricht = lists:concat([Nachricht, " DLQ: ", werkzeug:timeMilliSecond()]),
       if length(Queue) > DLQGroesse ->
         werkzeug:delete_last(Queue),
-        werkzeug:logging(LogDatei,"+Server: Letzte Nachricht aus DLQ geloescht\n")
+        werkzeug:logging(LogDatei,"\n+Server: Letzte Nachricht aus DLQ geloescht")
       end,
       deliveryQueue([{Number, NeueNachricht} | Queue], LogDatei, DLQGroesse, LetzteMsgNr+1);
     {getmsg, AbsenderPID} ->
-      %TODO
-      AbsenderPID ! {reply,1,"XXX",true},
+%TODO
+%AbsenderPID ! {reply,1,"XXX",true},
       deliveryQueue(Queue, LogDatei, DLQGroesse, LetzteMsgNr);
     {getLetzteNr} ->
       hbq ! LetzteMsgNr
@@ -81,10 +87,10 @@ deliveryQueue(Queue, LogDatei, DLQGroesse, LetzteMsgNr) ->
 .
 
 %clientManager(ClientDict, []) ->
-  %NeueClientDict = ClientDi
-  %TODO
+%NeueClientDict = ClientDi
+%TODO
 %.
 
 %sendeAlleNachrichten(Queue, ClientPID) ->
-  %TODO
+%TODO
 %.
