@@ -1,14 +1,14 @@
 -module(server).
 -compile(export_all).
 
-start(Name) ->
+start() ->
   HBQ             = spawn(fun() -> queue_helper:queue([]) end),
   DQ              = spawn(fun() -> queue_helper:queue([]) end),
   Manager         = spawn(fun() -> manager:manager([HBQ, DQ]) end),
   Sender          = spawn(fun() -> sender:send_func(DQ) end),
   ClientManager   = spawn(fun() -> client_manager:loop([]) end),
   Server          = spawn(fun() -> loop([HBQ, DQ, Sender, Manager], 1, ClientManager) end),
-  tools:reregister(Name, Server),
+  tools:reregister(wk, Server),
   tools:reregister(hbq, HBQ),
   tools:reregister(dq, DQ),
   tools:reregister(manager, Manager),
