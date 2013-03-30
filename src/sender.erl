@@ -8,6 +8,7 @@ send_func(DQ, ClientManager) ->
 			DQ ! {getall, self(), Pid},
 			send_func(DQ, ClientManager);
 		{messages, Messages, Pid} ->
+      %TODO Nachrichtennummer des Clients bekommen, Timestamp überprüfen
 			send_messages(Messages, Pid),
       send_func(DQ, ClientManager)
 	end
