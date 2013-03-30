@@ -1,15 +1,15 @@
 -module(sender).
 -compile(export_all).
 
-send_func(DQ) ->
+send_func(DQ, ClientManager) ->
 	receive
 		{send_messages, Pid} ->
       tools:stdout("retrieving messages from DQ~n"),
 			DQ ! {getall, self(), Pid},
-			send_func(DQ);
+			send_func(DQ, ClientManager);
 		{values, Messages, Pid} ->
 			send_messages(Messages, Pid),
-      send_func(DQ)
+      send_func(DQ, ClientManager)
 	end
 .
 
