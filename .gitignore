@@ -1,6 +1,7 @@
 .eunit
 .project
 .settings/
+~$*.docx
 deps
 *.o
 *.beam

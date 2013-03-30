@@ -1,3 +1,4 @@
+cd("C:/Software/rails/vsp/src").
 c(client).
                   c(server).
                   S = server:start().
