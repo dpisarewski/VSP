@@ -9,7 +9,7 @@ queue(Queue) ->
 		{append, Messages}->
 			queue(lists:append(Queue, Messages));
 		{getall, Pid, Arguments} ->
-			Pid ! {values, Queue, Arguments},
+			Pid ! {messages, Queue, Arguments},
       queue(Queue);
 		{pop, Pid} ->
       Keys = dict:fetch_keys(Queue),
