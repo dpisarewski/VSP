@@ -1,4 +1,4 @@
--module(manager).
+-module(queue_manager).
 -compile(export_all).
 
 manager([HBQ, DQ])->

@@ -4,16 +4,16 @@
 start() ->
   HBQ             = spawn(fun() -> queue_helper:queue([]) end),
   DQ              = spawn(fun() -> queue_helper:queue([]) end),
-  Manager         = spawn(fun() -> manager:manager([HBQ, DQ]) end),
+  QueueManager    = spawn(fun() -> queue_manager:manager([HBQ, DQ]) end),
   ClientManager   = spawn(fun() -> client_manager:loop([]) end),
   Sender          = spawn(fun() -> sender:send_func(DQ, ClientManager) end),
-  Server          = spawn(fun() -> loop([HBQ, DQ, Sender, Manager, ClientManager], 1) end),
+  Server          = spawn(fun() -> loop([HBQ, DQ, Sender, QueueManager, ClientManager], 1) end),
   tools:reregister(wk, Server),
   tools:reregister(hbq, HBQ),
   tools:reregister(dq, DQ),
-  tools:reregister(manager, Manager),
-  tools:reregister(sender, Sender),
+  tools:reregister(queue_manager, QueueManager),
   tools:reregister(client_manager, ClientManager),
+  tools:reregister(sender, Sender),
   Server
 .
 
