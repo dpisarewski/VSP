@@ -1,4 +1,6 @@
 .eunit
+.project
+.settings/
 deps
 *.o
 *.beam

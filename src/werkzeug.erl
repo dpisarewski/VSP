@@ -81,9 +81,11 @@ timeMilliSecond() ->
 	Tag = lists:concat([klebe(Day,""),".",klebe(Month,"")," ",klebe(Hour,""),":"]),
 	{_, _, MicroSecs} = now(),
 	Tag ++ concat([Minute,Second],":") ++ "," ++ toMilliSeconds(MicroSecs)++"|".
+%%
+% Bugfix: 1 raufaddieren, da sonst die Fließkommaausgabe um eine Position verrutscht
 toMilliSeconds(MicroSecs) ->
 	Seconds = MicroSecs / 1000000,
-	string:substr( float_to_list(Seconds), 3, 3).
+	string:substr( float_to_list(1 + Seconds), 3, 3).
 concat(List, Between) -> concat(List, Between, "").
 concat([], _, Text) -> Text;
 concat([First|[]], _, Text) ->
@@ -138,7 +140,7 @@ bestimme_mis(_WggT,0,Mis) -> Mis;
 bestimme_mis(WggT,GGTs,Mis) -> 
 	Mi = einmi([3, 5, 11, 13, 23, 37],WggT),
 	Enthalten = lists:member(Mi,Mis), 
-	if 	Enthalten -> bestimme_mis(WggT,GGTs,Mis);
+	if Enthalten -> bestimme_mis(WggT,GGTs,Mis);
 		true ->	bestimme_mis(WggT,GGTs-1,[Mi|Mis])
 	end.	
 % berechnet ein Mi
