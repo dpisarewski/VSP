@@ -11,6 +11,8 @@ queue(Queue) ->
 		{getall, Pid, Arguments} ->
 			Pid ! {messages, Queue, Arguments},
       queue(Queue);
+    {remove, N} ->
+      queue(lists:sublist(Queue, N, length(Queue)));
 		{pop, Pid} ->
       Keys = dict:fetch_keys(Queue),
       [FirstKey | _ ] = Keys,
