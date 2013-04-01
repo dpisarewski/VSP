@@ -32,3 +32,12 @@ reregister(Name, Pid) ->
   end,
   register(Name, Pid)
 .
+
+%Sendet einem Process eine Nachricht mit Params und wartet auf eine Antwort mit dem Label ResponseLabel von diesem Process. Anchschließend führt den Callcack aus.
+synchronized_call(Process, Params, ResponseLabel, Callback) ->
+  Process ! Params,
+  receive
+    {ResponseLabel, Data}->
+      Callback(Data)
+  end
+.

@@ -5,12 +5,11 @@ send_func(DQ, ClientManager) ->
 	receive
 		{send_messages, Pid} ->
       tools:stdout("retrieving messages from DQ~n"),
-			DQ ! {getall, self(), Pid},
-			send_func(DQ, ClientManager);
-		{messages, Messages, Pid} ->
-      %TODO Nachrichtennummer des Clients bekommen, Timestamp überprüfen
-			send_messages(Messages, Pid),
-      send_func(DQ, ClientManager)
+			tools:synchronized_call(DQ, {getall, self()}, messages, fun(Messages)->
+        %TODO Nachrichtennummer des Clients bekommen, Timestamp überprüfen
+        send_messages(Messages, Pid)
+      end),
+			send_func(DQ, ClientManager)
 	end
 .
 

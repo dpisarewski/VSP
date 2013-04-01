@@ -8,11 +8,10 @@ queue(Queue) ->
 			queue(lists:append(Queue, [{Number, Text}]));
 		{append, Messages}->
 			queue(lists:append(Queue, Messages));
-		{getall, Pid, Arguments} ->
-			Pid ! {messages, Queue, Arguments},
+		{getall, Pid} ->
+			Pid ! {messages, Queue},
       queue(Queue);
     {remove, N} ->
-      tools:stdout("removing messages from HBQ~n"),
       queue(lists:sublist(Queue, N, length(Queue)));
     {replace, Messages} ->
       queue(Messages);

@@ -5,10 +5,7 @@ manager([HBQ, DQ]) ->
   receive
     {push, Message} ->
       HBQ ! {push, Message},
-      HBQ ! {getall, self(), []},
-      manager([HBQ, DQ]);
-    {messages, Messages, _} ->
-      check_for_gaps(Messages, [HBQ, DQ]),
+      tools:synchronized_call(HBQ, {getall, self()}, messages, fun(Messages)-> check_for_gaps(Messages, [HBQ, DQ]) end),
       manager([HBQ, DQ])
   end
 .
@@ -24,27 +21,23 @@ check_for_gaps(Messages, [HBQ, DQ]) ->
 
 transfer_messages(Messages, HBQ, DQ) ->
   LastNumber = find_next_gap(Messages),
-  tools:stdout(lists:concat(["Found a gap after message number ", werkzeug:to_String(LastNumber)])),
   DQ  ! {append, [Message || Message <- Messages, element(1, Message) =< LastNumber]},
   HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]}
 .
 
 fill_gap(Messages, DQ) ->
   FirstHBQ  = element(1, hd(Messages)),
-  DQ ! {getall, self(), []},
-  receive
-    {messages, DQMessages, _} ->
-      LastDQ = if DQMessages =/= [] ->
-          element(1, lists:last(DQMessages));
-        true ->
-          0
-      end,
-      if FirstHBQ > LastDQ + 1 ->
-          ErrorMessage  = make_error_message(LastDQ + 1, FirstHBQ - 1),
-          DQ  ! {push, ErrorMessage};
-        true -> false
-      end
-  end
+  tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages)->
+    LastDQ = if DQMessages =/= [] ->
+      element(1, lists:last(DQMessages));
+      true -> 0
+    end,
+    if FirstHBQ > LastDQ + 1 ->
+      ErrorMessage  = make_error_message(LastDQ + 1, FirstHBQ - 1),
+      DQ  ! {push, ErrorMessage};
+      true -> false
+    end
+  end)
 .
 
 make_error_message(First, Last) ->
