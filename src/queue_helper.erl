@@ -12,7 +12,10 @@ queue(Queue) ->
 			Pid ! {messages, Queue, Arguments},
       queue(Queue);
     {remove, N} ->
+      tools:stdout("removing messages from HBQ~n"),
       queue(lists:sublist(Queue, N, length(Queue)));
+    {replace, Messages} ->
+      queue(Messages);
 		{pop, Pid} ->
       Keys = dict:fetch_keys(Queue),
       [FirstKey | _ ] = Keys,

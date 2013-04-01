@@ -25,9 +25,8 @@ loop([HBQ, DQ, Sender, Manager, ClientManager], N) ->
     {getmessages, Pid} ->
       Sender ! {send_messages, Pid},
       loop([HBQ, DQ, Sender, Manager, ClientManager], N);
-    {dropmessage, {Nachricht, Number}} ->
-      HBQ ! {push, {Number, Nachricht}},
-      Manager ! validate_queues,
+    {dropmessage, {Text, Number}} ->
+      Manager ! {push, {Number, Text}},
       loop([HBQ, DQ, Sender, Manager, ClientManager], N)
   end
 .

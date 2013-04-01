@@ -7,7 +7,7 @@ logging(Datei,Text) ->
 .
 
 stdout(Text) ->
-  io:write(io:format(Text))
+  io:fwrite(Text)
 .
 
 get_config_value(Name) ->

@@ -8,23 +8,42 @@ manager([HBQ, DQ]) ->
       HBQ ! {getall, self(), []},
       manager([HBQ, DQ]);
     {messages, Messages, _} ->
-      %check_for_gaps(Messages, [HBQ, DQ]),
-      DQ ! {append, Messages},
-      tools:stdout("added message to DQ~n"),
+      check_for_gaps(Messages, [HBQ, DQ]),
       manager([HBQ, DQ])
   end
 .
 
 check_for_gaps(Messages, [HBQ, DQ]) ->
   DQLimit = tools:get_config_value(dlq_limit),
-  if length(Messages) >= DQLimit ->
-      First = element(1, hd(Messages)),
-      Next  = find_next_gap(Messages) + 1,
-      ErrorMessage = make_error_message(First, First),
-      DQ  ! {push, ErrorMessage},
-      HBQ ! {remove, Next};
-    true ->
-      false
+  if length(Messages) >= DQLimit / 2 ->
+      fill_gap(Messages, DQ),
+      transfer_messages(Messages, HBQ, DQ);
+    true -> false
+  end
+.
+
+transfer_messages(Messages, HBQ, DQ) ->
+  LastNumber = find_next_gap(Messages),
+  tools:stdout(lists:concat(["Found a gap after message number ", werkzeug:to_String(LastNumber)])),
+  DQ  ! {append, [Message || Message <- Messages, element(1, Message) =< LastNumber]},
+  HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]}
+.
+
+fill_gap(Messages, DQ) ->
+  FirstHBQ  = element(1, hd(Messages)),
+  DQ ! {getall, self(), []},
+  receive
+    {messages, DQMessages, _} ->
+      LastDQ = if DQMessages =/= [] ->
+          element(1, lists:last(DQMessages));
+        true ->
+          0
+      end,
+      if FirstHBQ > LastDQ + 1 ->
+          ErrorMessage  = make_error_message(LastDQ + 1, FirstHBQ - 1),
+          DQ  ! {push, ErrorMessage};
+        true -> false
+      end
   end
 .
 
@@ -36,7 +55,8 @@ make_error_message(First, Last) ->
 find_next_gap(Messages) ->
   lists:foldl(
     fun(Elem, Acc) ->
-      if (Acc == 0) or (Elem == Acc + 1) -> Elem;
+      {Number, _} = Elem,
+      if (Acc == 0) or (Number == Acc + 1) -> Number;
         true -> Acc
       end
     end, 0, Messages)
