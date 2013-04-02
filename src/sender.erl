@@ -33,6 +33,7 @@ update_client_info(ClientManager, Pid, Messages) ->
     Expired = timer:now_diff(now(), Timestamp) / 1000 > timer:seconds(tools:get_config_value(clientlifetime)),
     NewNumber = if
       Expired ->
+		werkzeug:logging("server.log", "Client " ++ werkzeug:to_String(Pid) ++ "wird vergessen! *************~n"),
         first_message_number(Messages);
       true ->
         MessagesAfter = [Message || Message <- Messages, element(1, Message) > Number],
