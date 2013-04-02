@@ -4,23 +4,45 @@
 send_func(DQ, ClientManager) ->
 	receive
 		{send_messages, Pid} ->
-      tools:stdout("retrieving messages from DQ~n"),
 			tools:synchronized_call(DQ, {getall, self()}, messages, fun(Messages)->
-        %TODO Nachrichtennummer des Clients bekommen, Timestamp überprüfen
-        send_messages(Messages, Pid)
+        tools:stdout("Received Messages~n"),
+        NextMessageNumber = update_client_info(ClientManager, Pid, Messages),
+        send_message(Pid, Messages, NextMessageNumber)
       end),
 			send_func(DQ, ClientManager)
 	end
 .
 
-send_messages([], _) ->
-	[]
-	;
+send_message(Pid, Messages, Number) ->
+  tools:stdout("sending message " ++ werkzeug:to_String(Number) ++ " to client " ++ pid_to_list(Pid) ++ "~n"),
+  MessagesAfter     = [Message || Message <- Messages, element(1, Message) > Number],
+  [{Number, Text}]  = [Message || Message <- Messages, element(1, Message) == Number],
+	Pid ! {reply, Number, Text, MessagesAfter == []}
+.
 
-send_messages(Messages, Pid) ->
-	[Message | Tail] 	= Messages,
-	{Number, Nachricht} = Message,
-  tools:stdout("sending message " ++ werkzeug:to_String(Number) ++ " to client " ++ pid_to_list(Pid)),
-	Pid ! {reply, Number, Nachricht, Tail == []}
-	%send_messages(Tail, Pid)
+update_client_info(ClientManager, Pid, Messages) ->
+  tools:synchronized_call(ClientManager, {get_client_info, self(), Pid}, client_info, fun(Response) ->
+    %FIXME too ugly function
+    tools:stdout(lists:concat(["Received client info ", werkzeug:to_String(Response), "~n"])),
+    {_, Number, Timestamp} = if Response =/= false ->
+        Response;
+      true -> init_client(Pid)
+    end,
+    Expired = timer:now_diff(now(), Timestamp) / 1000 > timer:seconds(tools:get_config_value(clientlifetime)),
+    NewNumber = if Expired -> 0;
+      true ->
+        MessagesAfter = [Message || Message <- Messages, element(1, Message) > Number],
+        if MessagesAfter == [] ->
+            Number;
+          true ->
+            element(1, hd(MessagesAfter))
+        end
+    end,
+    ClientManager ! {set_client_info, {Pid, NewNumber, now()}},
+    NewNumber
+  end)
+.
+
+init_client(ClientPid) ->
+  {ClientPid, 0, now()}
 .

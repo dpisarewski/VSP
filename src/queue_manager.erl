@@ -28,6 +28,7 @@ transfer_messages(Messages, HBQ, DQ) ->
 fill_gap(Messages, DQ) ->
   FirstHBQ  = element(1, hd(Messages)),
   tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages)->
+    %FIXME too ugly function
     LastDQ = if DQMessages =/= [] ->
       element(1, lists:last(DQMessages));
       true -> 0
