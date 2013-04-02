@@ -10,8 +10,8 @@ stdout(Text) ->
   io:fwrite(Text)
 .
 
-get_config_value(Name) ->
-  {ok, Config} = file:consult("server.cfg"),
+get_config_value(ConfigFile, Name) ->
+  {ok, Config} = file:consult(werkzeug:to_String(ConfigFile) ++ ".cfg"),
   return_value_or_false(lists:keyfind(Name, 1, Config))
 .
 
@@ -41,4 +41,9 @@ synchronized_call(Process, Params, ResponseLabel, Callback) ->
     {ResponseLabel, Data}->
       Callback(Data)
   end
+.
+
+log(ConfigFile, Message) ->
+  File = get_config_value(ConfigFile, log_datei),
+  werkzeug:logging(File, Message)
 .

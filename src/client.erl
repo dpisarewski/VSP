@@ -11,7 +11,7 @@
 start(ServerPID, ClientNummer) ->
 %Datei in der die Einstellungen Hinterlegt
 %%  sind
-  {ok, ConfigListe} = file:consult("cfg/client.cfg"),
+  {ok, ConfigListe} = file:consult("client.cfg"),
 %Der Pfad und Name der Datei für Logging
   {ok, LogDatei} = werkzeug:get_config_value(log_datei, ConfigListe),
 %Intervall mit dem die Nachrichten versendet werden
@@ -77,7 +77,6 @@ frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler) ->
 
 %empfangene Nachricht Protokollieren
       werkzeug:logging(LogDatei, NeueNachricht ++ "\n"),
-%      werkzeug:logging(LogDatei, "\n---------------Nachricht: "++ integer_to_list(Number) ++" angekommen---->>>>>>>>>>>>> " ++ atom_to_list(Terminated)),
 
 %Prüfung ob es weitere unbekannte Nachrichten gibt
       case Terminated of

@@ -20,7 +20,7 @@ manager([HBQ, DQ]) ->
 
 %Prüft, ob die HBQ voll ist, ob es eine Lücke gibt, und trägt Nachrichten aus HBQ in die DQ über
 check_for_gaps(Messages, [HBQ, DQ]) ->
-  DQLimit = tools:get_config_value(dlq_limit),
+  DQLimit = tools:get_config_value(server, dlq_limit),
   if length(Messages) >= DQLimit / 2 ->
       fill_gap(Messages, DQ),
       transfer_messages(Messages, HBQ, DQ);

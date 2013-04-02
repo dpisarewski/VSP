@@ -58,7 +58,7 @@ extract_info(Response, ClientPid) ->
 
 %Prüft, ob die vergangene Zeit seit der letzten Kommunikation einen vorgegebenen Wert überschreitet, und setzt in diesem Fall die Nachrichtennummer zurück
 compute_new_number({ClientPid, Number, Timestamp}, Messages) ->
-  Expired = timer:now_diff(now(), Timestamp) / 1000 > timer:seconds(tools:get_config_value(clientlifetime)),
+  Expired = timer:now_diff(now(), Timestamp) / 1000 > timer:seconds(tools:get_config_value(server, clientlifetime)),
   if
     Expired ->
       werkzeug:logging("server.log", "Client " ++ werkzeug:to_String(ClientPid) ++ " wird vergessen! *************\n"),
