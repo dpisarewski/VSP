@@ -31,6 +31,12 @@ transfer_messages(Messages, HBQ, DQ) ->
   HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]}
 .
 
+append_dq_timestamp(Message) ->
+	{Id, Text} = Message,
+	NewText = Text ++ "| DLQ In:" ++ werkzeug:timeMilliSecond(),
+	{Id, NewText}
+.
+
 fill_gap(Messages, DQ) ->
   FirstHBQ  = element(1, hd(Messages)),
   tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages)->

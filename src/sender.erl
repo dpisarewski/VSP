@@ -14,7 +14,8 @@ send_func(DQ, ClientManager) ->
 .
 
 send_message(Pid, Messages, Number) ->
-  tools:stdout("sending message " ++ werkzeug:to_String(Number) ++ " to client " ++ pid_to_list(Pid) ++ "~n"),
+  werkzeug:logging("server.log", "Server: Nachrichtennummer " ++ werkzeug:to_String(Number) ++ " an " ++ pid_to_list(Pid) ++ " gesendet~n"),
+  %tools:stdout("sending message " ++ werkzeug:to_String(Number) ++ " to client " ++ pid_to_list(Pid) ++ "~n"),
   MessagesAfter     = [Message || Message <- Messages, element(1, Message) > Number],
   [{Number, Text}]  = [Message || Message <- Messages, element(1, Message) == Number],
 	Pid ! {reply, Number, Text, MessagesAfter == []}
