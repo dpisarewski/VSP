@@ -114,24 +114,10 @@ sendeNachricht(ServerPID, _, _, _, _, _) -> ServerPID
 %Funktion zur Berechnung des Intervalls zwischen
 %%  dem Versenden der Nachrichten
 berechneIntervall(Intervall) ->
-%Zufallszahl erzeugen. 1: -50% 2: +50%
-  Rand = random:uniform(2),
-  if
-    Rand == 1 ->
-      TIntervall = round(Intervall - (Intervall*0.5));
-    Rand == 2 ->
-      TIntervall = round(Intervall + (Intervall*0.5))
-  end,
-
-%wenn der errechnete Intervall weniger als 1s. wird
-%%  der Intervall 1s. + errechneter Intervall
-  if
-    Rand == 2, (TIntervall - Intervall) < 1 -> NeuerIntervall = TIntervall + 1000;
-    Rand == 1, (Intervall - TIntervall) < 1 -> NeuerIntervall = TIntervall*2 + 1000;
-    true -> NeuerIntervall = TIntervall
-  end,
-
-  NeuerIntervall
+  %Zufallszahl erzeugen. 1: -50% 2: +50%
+  Sign = round(random:uniform() - 0.5),
+  Change = max(1.0, Intervall * 0.5),
+  max(1.0, Intervall + Change * Sign)
 .
 
 %Speichert die Nummern der gesendeten und empfangenen
