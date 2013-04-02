@@ -21,6 +21,7 @@ return_value_or_false(Tuple) ->
   Value
 .
 
+%Prüft, ob ein Prozess mit angegebenem Namen registriert ist, töten ihn und registriert neuen Prozess mit diesem Namen
 reregister(Name, Pid) ->
   OldPid = whereis(Name),
   if
