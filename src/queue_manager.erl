@@ -5,7 +5,9 @@ manager([HBQ, DQ]) ->
   receive
     {push, Message} ->
       HBQ ! {push, Message},
-      tools:synchronized_call(HBQ, {getall, self()}, messages, fun(Messages)-> check_for_gaps(Messages, [HBQ, DQ]) end),
+      tools:synchronized_call(HBQ, {getall, self()}, messages, fun(Messages)->
+        check_for_gaps(lists:sort(Messages), [HBQ, DQ])
+      end),
       manager([HBQ, DQ])
   end
 .

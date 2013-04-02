@@ -24,18 +24,23 @@ update_client_info(ClientManager, Pid, Messages) ->
   tools:synchronized_call(ClientManager, {get_client_info, self(), Pid}, client_info, fun(Response) ->
     %FIXME too ugly function
     tools:stdout(lists:concat(["Received client info ", werkzeug:to_String(Response), "~n"])),
-    {_, Number, Timestamp} = if Response =/= false ->
+    {_, Number, Timestamp} = if
+      Response =/= false ->
         Response;
-      true -> init_client(Pid)
+      true ->
+        init_client(Pid)
     end,
     Expired = timer:now_diff(now(), Timestamp) / 1000 > timer:seconds(tools:get_config_value(clientlifetime)),
-    NewNumber = if Expired -> 0;
+    NewNumber = if
+      Expired ->
+        first_message_number(Messages);
       true ->
         MessagesAfter = [Message || Message <- Messages, element(1, Message) > Number],
-        if MessagesAfter == [] ->
+        if
+          MessagesAfter == [] ->
             Number;
           true ->
-            element(1, hd(MessagesAfter))
+            first_message_number(MessagesAfter)
         end
     end,
     ClientManager ! {set_client_info, {Pid, NewNumber, now()}},
@@ -45,4 +50,8 @@ update_client_info(ClientManager, Pid, Messages) ->
 
 init_client(ClientPid) ->
   {ClientPid, 0, now()}
+.
+
+first_message_number(Messages) ->
+  element(1, hd(Messages))
 .
