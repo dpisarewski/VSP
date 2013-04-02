@@ -14,10 +14,10 @@ send_func(DQ, ClientManager) ->
 .
 
 send_message(Pid, Messages, Number) ->
-  werkzeug:logging("server.log", "Server: Nachrichtennummer " ++ werkzeug:to_String(Number) ++ " an " ++ pid_to_list(Pid) ++ " gesendet~n"),
   %tools:stdout("sending message " ++ werkzeug:to_String(Number) ++ " to client " ++ pid_to_list(Pid) ++ "~n"),
   MessagesAfter     = [Message || Message <- Messages, element(1, Message) > Number],
   [{Number, Text}]  = [Message || Message <- Messages, element(1, Message) == Number],
+  werkzeug:logging("server.log", Text ++ "|.(" ++ werkzeug:to_String(Number) ++ ")-getmessages von " ++ werkzeug:to_String(Pid) ++ "-" ++ werkzeug:to_String(MessagesAfter == []) ++ "~n"),
 	Pid ! {reply, Number, Text, MessagesAfter == []}
 .
 
