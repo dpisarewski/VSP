@@ -13,7 +13,7 @@ start() ->
     tools:reregister(queue_manager, QueueManager),
     tools:reregister(client_manager, ClientManager),
     tools:reregister(sender, Sender),
-    werkzeug:logging("server.log", "Server Startzeit: " ++ werkzeug:timeMilliSecond() ++ "| mit PID " ++ werkzeug:to_String(self()) ++ "\n"),
+    tools:log(server, "Server Startzeit: " ++ werkzeug:timeMilliSecond() ++ "| mit PID " ++ werkzeug:to_String(self()) ++ "\n"),
     loop([HBQ, DQ, Sender, QueueManager, ClientManager], 1, no_timer)
   end),
   tools:reregister(tools:get_config_value(server, servername), Server),
@@ -26,7 +26,7 @@ loop([HBQ, DQ, Sender, Manager, ClientManager], N, Timer) ->
   receive
     {getmsgid, Pid} ->
       Pid ! {nnr, N},
-      werkzeug:logging("server.log", "Server: Nachrichtennummer " ++ werkzeug:to_String(N) ++ " an " ++ werkzeug:to_String(Pid) ++ " gesendet\n"),
+      tools:log(server, "Server: Nachrichtennummer " ++ werkzeug:to_String(N) ++ " an " ++ werkzeug:to_String(Pid) ++ " gesendet\n"),
       loop([HBQ, DQ, Sender, Manager, ClientManager], N + 1, NewTimer);
     {getmessages, Pid} ->
       Sender ! {send_messages, Pid},
@@ -44,6 +44,6 @@ renew_timer(Timer) ->
     true ->
       timer:cancel(Timer)
   end,
-  {ok, NewTimer} = timer:exit_after(tools:get_config_value(server, lifetime) * 1000, "Server stopped\n"),
+  {ok, NewTimer} = timer:exit_after(tools:get_config_value(server, lifetime) * 1000, "Terminating execution because no clients available\n"),
   NewTimer
 .

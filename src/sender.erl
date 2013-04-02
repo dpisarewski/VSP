@@ -20,7 +20,7 @@ send_func(DQ, ClientManager) ->
 send_message(Pid, Messages, Number) ->
   MessagesAfter     = [Message || Message <- Messages, element(1, Message) > Number],
   [{Number, Text}]  = [Message || Message <- Messages, element(1, Message) == Number],
-  werkzeug:logging("server.log", Text ++ "|.(" ++ werkzeug:to_String(Number) ++ ")-getmessages von " ++ werkzeug:to_String(Pid) ++ "-" ++ werkzeug:to_String(MessagesAfter == []) ++ "\n"),
+  tools:log(server, Text ++ "|.(" ++ werkzeug:to_String(Number) ++ ")-getmessages von " ++ werkzeug:to_String(Pid) ++ "-" ++ werkzeug:to_String(MessagesAfter == []) ++ "\n"),
 	Pid ! {reply, Number, Text, MessagesAfter == []}
 .
 
@@ -61,7 +61,7 @@ compute_new_number({ClientPid, Number, Timestamp}, Messages) ->
   Expired = timer:now_diff(now(), Timestamp) / 1000 > timer:seconds(tools:get_config_value(server, clientlifetime)),
   if
     Expired ->
-      werkzeug:logging("server.log", "Client " ++ werkzeug:to_String(ClientPid) ++ " wird vergessen! *************\n"),
+      tools:log(server, "Client " ++ werkzeug:to_String(ClientPid) ++ " wird vergessen! *************\n"),
       first_message_number(Messages);
     true ->
       next_message_number(Messages, Number)

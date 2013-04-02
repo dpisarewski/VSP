@@ -7,7 +7,7 @@ manager([HBQ, DQ]) ->
       %Hängt Information über die Eingangszeit an die Nachricht
       NewMessage = append_hbq_timestamp(Message),
       %Loggt die Nachricht
-      werkzeug:logging("server.log", element(2, NewMessage) ++ "|-dropmessage\n"),
+      tools:log(server, element(2, NewMessage) ++ "|-dropmessage\n"),
         %Fügt die neue Nachricht in die HBQ ein
         HBQ ! {push, NewMessage},
         %Fragt alle Nachrighten aus HBQ ab
