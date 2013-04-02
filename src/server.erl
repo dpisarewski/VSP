@@ -1,5 +1,5 @@
 -module(server).
--compile(export_all).
+-compile([debug_info, export_all]).
 
 start() ->
   HBQ             = spawn(fun() -> queue_helper:queue([]) end),
@@ -14,7 +14,7 @@ start() ->
   tools:reregister(queue_manager, QueueManager),
   tools:reregister(client_manager, ClientManager),
   tools:reregister(sender, Sender),
-  werkzeug:logging("server.log", "Server Startzeit: " ++ werkzeug:timeMilliSecond() ++ "| mit PID " ++ werkzeug:to_String(self()) ++ "~n"),
+  werkzeug:logging("server.log", "Server Startzeit: " ++ werkzeug:timeMilliSecond() ++ "| mit PID " ++ werkzeug:to_String(self()) ++ "\n"),
   Server
 .
 
@@ -22,7 +22,7 @@ loop([HBQ, DQ, Sender, Manager, ClientManager], N) ->
   receive
     {getmsgid, Pid} ->
       Pid ! {nnr, N},
-      werkzeug:logging("server.log", "Server: Nachrichtennummer " ++ werkzeug:to_String(N) ++ " an " ++ werkzeug:to_String(Pid) ++ " gesendet~n"),
+      werkzeug:logging("server.log", "Server: Nachrichtennummer " ++ werkzeug:to_String(N) ++ " an " ++ werkzeug:to_String(Pid) ++ " gesendet\n"),
       loop([HBQ, DQ, Sender, Manager, ClientManager], N + 1);
     {getmessages, Pid} ->
       Sender ! {send_messages, Pid},

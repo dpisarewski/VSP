@@ -1,5 +1,5 @@
 -module(queue_helper).
--compile(export_all).
+-compile([debug_info, export_all]).
 
 
 queue(Queue) ->
@@ -11,15 +11,7 @@ queue(Queue) ->
 		{getall, Pid} ->
 			Pid ! {messages, Queue},
       queue(Queue);
-    {remove, N} ->
-      queue(lists:sublist(Queue, N, length(Queue)));
     {replace, Messages} ->
-      queue(Messages);
-		{pop, Pid} ->
-      Keys = dict:fetch_keys(Queue),
-      [FirstKey | _ ] = Keys,
-			Value = dict:fetch(FirstKey, Queue),
-			Pid ! {value, Value},
-			queue(dict:erase(FirstKey, Queue))
+      queue(Messages)
 	end
 .

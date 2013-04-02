@@ -1,5 +1,5 @@
 -module(tools).
--compile(export_all).
+-compile([debug_info, export_all]).
 
 logging(Datei,Text) ->
   file:write_file(Datei,Text,[append]),

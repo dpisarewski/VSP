@@ -1,13 +1,13 @@
 -module(queue_manager).
--compile(export_all).
+-compile([debug_info, export_all]).
 
 manager([HBQ, DQ]) ->
   receive
     {push, Message} ->
 	  {Number, Text} = Message,
-	  NewText = Text ++ "|(" ++ Number ++ "); HBQ In: " ++ werkzeug:timeMilliSecond(),
+	  NewText = lists:concat([Text, "|(", Number, "); HBQ In: ", werkzeug:timeMilliSecond()]),
 	  NewMessage = {Number, NewText},
-	  werkzeug:logging("server.log", NewText ++ "|-dropmessage~n"),
+	  werkzeug:logging("server.log", NewText ++ "|-dropmessage\n"),
       HBQ ! {push, NewMessage},
       tools:synchronized_call(HBQ, {getall, self()}, messages, fun(Messages)->
         check_for_gaps(lists:sort(Messages), [HBQ, DQ])
