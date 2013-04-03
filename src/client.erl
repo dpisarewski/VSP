@@ -128,7 +128,7 @@ nachrichtenNummern(Liste) ->
       nachrichtenNummern(NeueListe);
 
     {istEigeneNachricht, Nummer, Pid} ->
-      Flag = lists:member(Nummer, Gesendete),
+      Flag = lists:member(Nummer, Liste),
       if
         Flag == true -> Pid ! ok;
         Flag == false ->  Pid ! nok
