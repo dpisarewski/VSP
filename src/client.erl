@@ -13,7 +13,7 @@ start(ServerPID, ClientNummer) ->
   %%  sind
   {ok, ConfigListe} = file:consult("client.cfg"),
   %Der Pfad und Name der Datei für Logging
-  {ok, LogDatei} = werkzeug:get_config_value(log_datei, ConfigListe),
+  LogDatei = lists:concat(["client_", ClientNummer, "@", element(2, inet:gethostname()), ".log"]),
   %Intervall mit dem die Nachrichten versendet werden
   {ok, Sendeintervall} = werkzeug:get_config_value(intervall, ConfigListe),
   %Anzahl der Nachrichten die hintereinander versendet werden
@@ -24,15 +24,10 @@ start(ServerPID, ClientNummer) ->
   %Prozess der gesendete und empfangene Nachrichten speichert
   NachrichtenSammler = spawn(fun() -> nachrichtenNummern([],[1],LogDatei) end),
   %Starten des Clients und anschliessendes senden des Stopsignals um den Timer zu starten
-  ClientPID = spawn(fun() -> simulation(AnzahlNachrichten, ServerPID, LogDatei, Sendeintervall, ClientNummer, NachrichtenSammler) end),
-  ClientPID ! stop,
-  receive
-    stop -> stop
-  after (LifeTime * 1000) ->
-    werkzeug:logging(LogDatei,"\n-Client: beendet"),
-    exit(ClientPID, kill)
-  end,
-  ClientPID
+  spawn(fun() ->
+    timer:exit_after(LifeTime * 1000, "Client beendet"),
+    simulation(AnzahlNachrichten, ServerPID, LogDatei, Sendeintervall, ClientNummer, NachrichtenSammler)
+  end)
 .
 
 %Schleife die der Client immerwieder durchläuft
@@ -40,16 +35,16 @@ start(ServerPID, ClientNummer) ->
 simulation(AnzahlNachrichten, ServerPID, LogDatei, Sendeintervall, ClientNummer, NachrichtenSammler) ->
 
   %Anstossen der Sendefunktion
-  werkzeug:logging(LogDatei, "\n%%%%%%%%%%%%%%%%%%%%%\n% client: sendet Nachrichten\n%%%%%%%%%%%%%%%%%%%%%"),
+  werkzeug:logging(LogDatei, "\n%%%%%%%%%%%%%%%%%%%%%\n% client: sendet Nachrichten\n%%%%%%%%%%%%%%%%%%%%%\n"),
   sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, Sendeintervall, ClientNummer, NachrichtenSammler),
 
   %Fehlernachricht provozieren
   ServerPID ! {getmsgid, self()},
   receive {nnr, Number1} -> Number1 end,
-  werkzeug:logging(LogDatei, "\n" ++ integer_to_list(ClientNummer) ++ "-client : " ++ integer_to_list(Number1) ++ "te_Nachricht um " ++ werkzeug:timeMilliSecond() ++ " vergessen zu senden!!!"),
+  werkzeug:logging(LogDatei, integer_to_list(ClientNummer) ++ "-client : " ++ integer_to_list(Number1) ++ "te_Nachricht um " ++ werkzeug:timeMilliSecond() ++ " vergessen zu senden!!!\n"),
 
   %Nachrichten abfragen
-  werkzeug:logging(LogDatei, "\n%%%%%%%%%%%%%%%%%%%%%\n% client: fragt Nachrichten ab\n%%%%%%%%%%%%%%%%%%%%%"),
+  werkzeug:logging(LogDatei, "%%%%%%%%%%%%%%%%%%%%%\n% client: fragt Nachrichten ab\n%%%%%%%%%%%%%%%%%%%%%\n\n"),
   frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler),
 
   %Neues Intervall für das Versenden der Nachrichten berechnen
@@ -100,7 +95,7 @@ sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, Sendeintervall, ClientNum
   Nachricht = lists:concat(["\n", ClientNummer, "-client@", Hostname, "2", "06", " : ", Number, "te Nachricht. C Out: ", werkzeug:timeMilliSecond()]),
 
   ServerPID ! {dropmessage, {Nachricht, Number}},
-  werkzeug:logging(LogDatei, Nachricht),
+  werkzeug:logging(LogDatei, Nachricht ++ "\n"),
 
   NachrichtenSammler ! {add, gesendete, Number},
 
