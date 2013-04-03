@@ -76,8 +76,8 @@ empfangeNachrichten(LogDatei, ServerPID, NummernListe) ->
 
       %Prüfung ob es weitere unbekannte Nachrichten gibt
       case Terminated of
-        true -> true;
-        false -> empfangeNachrichten(LogDatei, ServerPID, NummernListe)
+        false -> empfangeNachrichten(LogDatei, ServerPID, NummernListe);
+        true -> true
       end
   end
 .
