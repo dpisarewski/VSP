@@ -28,10 +28,16 @@ start(ServerPID, ClientNummer) ->
   NummernListe = spawn(fun() -> liste([]) end),
   %Starten des Clients und anschliessendes senden des Stopsignals um den Timer zu starten
   spawn(fun() ->
+	%timer:apply_after(LifeTime * 1000, ?MODULE, kill, {self(), LogDatei, "Client " ++ werkzeug:to_String(ClientNummer) ++ " beendet!"}),
     timer:exit_after(LifeTime * 1000, "Client beendet"),
     simulation(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NummernListe)
   end)
 .
+
+%kill(PID, LogDatei, Reason) ->
+%	werkzeug:logging(LogDatei, Reason),
+%	exit(PID, Reason)
+%.
 
 %Schleife die der Client immerwieder durchläuft
 %%  bis der Timer abläeft
