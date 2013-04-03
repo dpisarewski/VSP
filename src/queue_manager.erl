@@ -21,11 +21,15 @@ manager([HBQ, DQ]) ->
 %Prüft, ob die HBQ voll ist, ob es eine Lücke gibt, und trägt Nachrichten aus HBQ in die DQ über
 check_for_gaps(Messages, [HBQ, DQ]) ->
   DQLimit = tools:get_config_value(server, dlq_limit),
-  if length(Messages) >= DQLimit / 2 ->
+  LastDQ = if length(Messages) >= DQLimit / 2 ->
       fill_gap(Messages, DQ);
-    true -> false
+    true -> 0
   end,
-  transfer_messages(Messages, HBQ, DQ)
+  if LastDQ + 1 <  element(1, hd(Messages)) ->
+      false;
+    true ->
+      transfer_messages(Messages, HBQ, DQ)
+  end  
 .
 
 %Trägt Nachrichten bis zur nächsten Lücke aus HBQ in die DQ
@@ -70,7 +74,8 @@ fill_gap(Messages, DQ) ->
         DQ  ! {shift, 1, tools:get_config_value(server, dlq_limit)},
         DQ  ! {push, ErrorMessage};
       true -> false
-    end
+    end,
+    LastDQ
   end)
 .
 
