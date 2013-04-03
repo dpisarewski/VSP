@@ -1,6 +1,6 @@
 == CLIENT ==
 
-erl -name ... -setcookie vsp
+erl -name whatsoever -setcookie vsp
 
 net_adm:ping('server@lab22.cpt.haw-hamburg.de').
 nodes().
