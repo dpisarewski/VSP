@@ -145,3 +145,117 @@ Server: Nachrichtennummer 10 an <0.447.0> gesendet
 
 1-client@lab28219 : 10te Nachricht. C Out: 03.04 13:58:32,903||(10); HBQ In: 03.04 13:58:32,903||-dropmessage
 Server: Nachrichtennummer 11 an <0.447.0> gesendet
+
+1-client@lab28219 : 11te Nachricht. C Out: 03.04 13:58:34,405||(11); HBQ In: 03.04 13:58:34,407||-dropmessage
+Server: Nachrichtennummer 12 an <0.447.0> gesendet
+Client <0.447.0> wird vergessen! *************
+
+1-client@lab28219 : 1te Nachricht. C Out: 03.04 13:58:13,383||(1); HBQ In: 03.04 13:58:13,383|| DLQ In:03.04 13:58:13,386||.(1)-getmessages von <0.447.0>-true
+Server: Nachrichtennummer 13 an <0.447.0> gesendet
+
+1-client@lab28219 : 13te Nachricht. C Out: 03.04 13:58:35,910||(13); HBQ In: 03.04 13:58:35,911||-dropmessage
+Server: Nachrichtennummer 14 an <0.447.0> gesendet
+
+1-client@lab28219 : 14te Nachricht. C Out: 03.04 13:58:38,412||(14); HBQ In: 03.04 13:58:38,414||-dropmessage
+Server: Nachrichtennummer 15 an <0.447.0> gesendet
+
+1-client@lab28219 : 15te Nachricht. C Out: 03.04 13:58:40,914||(15); HBQ In: 03.04 13:58:40,915||-dropmessage
+Server: Nachrichtennummer 16 an <0.447.0> gesendet
+
+1-client@lab28219 : 16te Nachricht. C Out: 03.04 13:58:43,416||(16); HBQ In: 03.04 13:58:43,417||-dropmessage
+Server: Nachrichtennummer 17 an <0.447.0> gesendet
+
+1-client@lab28219 : 17te Nachricht. C Out: 03.04 13:58:45,918||(17); HBQ In: 03.04 13:58:45,919||-dropmessage
+Server: Nachrichtennummer 18 an <0.447.0> gesendet
+Client <0.447.0> wird vergessen! *************
+
+1-client@lab28219 : 1te Nachricht. C Out: 03.04 13:58:13,383||(1); HBQ In: 03.04 13:58:13,383|| DLQ In:03.04 13:58:13,386||.(1)-getmessages von <0.447.0>-true
+Server: Nachrichtennummer 19 an <0.447.0> gesendet
+
+1-client@lab28219 : 19te Nachricht. C Out: 03.04 13:58:48,424||(19); HBQ In: 03.04 13:58:48,426||-dropmessage
+Server: Nachrichtennummer 20 an <0.447.0> gesendet
+
+1-client@lab28219 : 20te Nachricht. C Out: 03.04 13:58:52,177||(20); HBQ In: 03.04 13:58:52,179||-dropmessage
+Server Startzeit: 03.04 14:06:24,488|| mit PID <0.629.0>
+Server: Nachrichtennummer 1 an <0.643.0> gesendet
+
+1-client@lab28219 : 1te Nachricht. C Out: 03.04 14:06:24,493||(1); HBQ In: 03.04 14:06:24,493||-dropmessage
+Server: Nachrichtennummer 2 an <0.643.0> gesendet
+Server: Nachrichtennummer 3 an <0.643.0> gesendet
+Server: Nachrichtennummer 4 an <0.643.0> gesendet
+Server: Nachrichtennummer 5 an <0.643.0> gesendet
+Server: Nachrichtennummer 6 an <0.643.0> gesendet
+Dummy message. |.(0)-getmessages von <0.643.0>-true
+Server: Nachrichtennummer 7 an <0.643.0> gesendet
+Server: Nachrichtennummer 8 an <0.643.0> gesendet
+Server: Nachrichtennummer 9 an <0.643.0> gesendet
+Server: Nachrichtennummer 10 an <0.643.0> gesendet
+Server: Nachrichtennummer 11 an <0.643.0> gesendet
+Server: Nachrichtennummer 12 an <0.643.0> gesendet
+Client <0.643.0> wird vergessen! *************
+Dummy message. |.(0)-getmessages von <0.643.0>-true
+Server: Nachrichtennummer 13 an <0.643.0> gesendet
+Server: Nachrichtennummer 14 an <0.643.0> gesendet
+Server: Nachrichtennummer 15 an <0.643.0> gesendet
+Server: Nachrichtennummer 16 an <0.643.0> gesendet
+Server: Nachrichtennummer 17 an <0.643.0> gesendet
+Server: Nachrichtennummer 18 an <0.643.0> gesendet
+Client <0.643.0> wird vergessen! *************
+Dummy message. |.(0)-getmessages von <0.643.0>-true
+Server: Nachrichtennummer 19 an <0.643.0> gesendet
+Server: Nachrichtennummer 20 an <0.643.0> gesendet
+Server Startzeit: 03.04 14:08:09,921|| mit PID <0.775.0>
+Server: Nachrichtennummer 1 an <0.789.0> gesendet
+
+1-client@lab28219 : 1te Nachricht. C Out: 03.04 14:08:09,924||(1); HBQ In: 03.04 14:08:09,925||-dropmessage
+Server: Nachrichtennummer 2 an <0.789.0> gesendet
+Server: Nachrichtennummer 3 an <0.789.0> gesendet
+Server: Nachrichtennummer 4 an <0.789.0> gesendet
+Server: Nachrichtennummer 5 an <0.789.0> gesendet
+Server: Nachrichtennummer 6 an <0.789.0> gesendet
+Dummy message. |.(0)-getmessages von <0.789.0>-true
+Server: Nachrichtennummer 7 an <0.789.0> gesendet
+Server: Nachrichtennummer 8 an <0.789.0> gesendet
+Server: Nachrichtennummer 9 an <0.789.0> gesendet
+Server: Nachrichtennummer 10 an <0.789.0> gesendet
+Server: Nachrichtennummer 11 an <0.789.0> gesendet
+Server: Nachrichtennummer 12 an <0.789.0> gesendet
+Client <0.789.0> wird vergessen! *************
+Dummy message. |.(0)-getmessages von <0.789.0>-true
+Server: Nachrichtennummer 13 an <0.789.0> gesendet
+Server: Nachrichtennummer 14 an <0.789.0> gesendet
+Server: Nachrichtennummer 15 an <0.789.0> gesendet
+Server: Nachrichtennummer 16 an <0.789.0> gesendet
+Server: Nachrichtennummer 17 an <0.789.0> gesendet
+Server: Nachrichtennummer 18 an <0.789.0> gesendet
+Client <0.789.0> wird vergessen! *************
+Dummy message. |.(0)-getmessages von <0.789.0>-true
+Server: Nachrichtennummer 19 an <0.789.0> gesendet
+Server: Nachrichtennummer 20 an <0.789.0> gesendet
+Server Startzeit: 03.04 14:10:26,649|| mit PID <0.930.0>
+Server: Nachrichtennummer 1 an <0.944.0> gesendet
+
+1-client@lab28219 : 1te Nachricht. C Out: 03.04 14:10:26,653||(1); HBQ In: 03.04 14:10:26,654||-dropmessage
+Server: Nachrichtennummer 2 an <0.944.0> gesendet
+Server: Nachrichtennummer 3 an <0.944.0> gesendet
+Server: Nachrichtennummer 4 an <0.944.0> gesendet
+Server: Nachrichtennummer 5 an <0.944.0> gesendet
+Server: Nachrichtennummer 6 an <0.944.0> gesendet
+Dummy message. |.(0)-getmessages von <0.944.0>-true
+Server: Nachrichtennummer 7 an <0.944.0> gesendet
+Server: Nachrichtennummer 8 an <0.944.0> gesendet
+Server: Nachrichtennummer 9 an <0.944.0> gesendet
+Server: Nachrichtennummer 10 an <0.944.0> gesendet
+Server: Nachrichtennummer 11 an <0.944.0> gesendet
+Server: Nachrichtennummer 12 an <0.944.0> gesendet
+Client <0.944.0> wird vergessen! *************
+Dummy message. |.(0)-getmessages von <0.944.0>-true
+Server: Nachrichtennummer 13 an <0.944.0> gesendet
+Server: Nachrichtennummer 14 an <0.944.0> gesendet
+Server: Nachrichtennummer 15 an <0.944.0> gesendet
+Server: Nachrichtennummer 16 an <0.944.0> gesendet
+Server: Nachrichtennummer 17 an <0.944.0> gesendet
+Server: Nachrichtennummer 18 an <0.944.0> gesendet
+Client <0.944.0> wird vergessen! *************
+Dummy message. |.(0)-getmessages von <0.944.0>-true
+Server: Nachrichtennummer 19 an <0.944.0> gesendet

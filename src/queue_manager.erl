@@ -21,10 +21,15 @@ manager([HBQ, DQ]) ->
 %Prüft, ob die HBQ voll ist, ob es eine Lücke gibt, und trägt Nachrichten aus HBQ in die DQ über
 check_for_gaps(Messages, [HBQ, DQ]) ->
   DQLimit = tools:get_config_value(server, dlq_limit),
-  LastDQ = if length(Messages) >= DQLimit / 2 ->
+  if length(Messages) >= DQLimit / 2 ->
       fill_gap(Messages, DQ);
     true -> 0
   end,
+  DQ ! {getall, self()},
+  receive
+    {messages, Messages} -> LastDQ = element(1, hd(Messages))
+  end,
+  tools:log(server, werkzeug:to_String(LastDQ)),
   if LastDQ + 1 <  element(1, hd(Messages)) ->
       false;
     true ->
