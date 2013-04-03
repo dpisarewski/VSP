@@ -1,8 +1,5 @@
-%% Copyright
 -module(client).
 -author("dpisarewski windowsfreak").
-
-%% API
 -export([start/2,startMultiple/3]).
 
 %Startfunktion zum Starten mehrerer Clients
@@ -20,58 +17,58 @@ start(ServerPID, ClientNummer) ->
   {ok, ConfigListe} = file:consult("client.cfg"),
   %Der Pfad und Name der Datei für Logging
   LogDatei = lists:concat(["client_", ClientNummer, "@", element(2, inet:gethostname()), ".log"]),
-  %Intervall mit dem die Nachrichten versendet werden
-  {ok, SendeIntervall} = werkzeug:get_config_value(intervall, ConfigListe),
   %Anzahl der Nachrichten die hintereinander versendet werden
   {ok, AnzahlNachrichten} = werkzeug:get_config_value(anzahl_nachrichten, ConfigListe),
+  %Intervall mit dem die Nachrichten versendet werden
+  {ok, SendeIntervall} = werkzeug:get_config_value(intervall, ConfigListe),
   %Zeit die der Client "lebt"
   {ok, LifeTime} = werkzeug:get_config_value(life_time, ConfigListe),
 
   %Prozess der gesendete und empfangene Nachrichten speichert
-  NachrichtenSammler = spawn(fun() -> nachrichtenNummern([]) end),
+  NummernListe = spawn(fun() -> liste([]) end),
   %Starten des Clients und anschliessendes senden des Stopsignals um den Timer zu starten
   spawn(fun() ->
     timer:exit_after(LifeTime * 1000, "Client beendet"),
-    simulation(AnzahlNachrichten, ServerPID, LogDatei, SendeIntervall, ClientNummer, NachrichtenSammler)
+    simulation(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NummernListe)
   end)
 .
 
 %Schleife die der Client immerwieder durchläuft
 %%  bis der Timer abläeft
-simulation(AnzahlNachrichten, ServerPID, LogDatei, SendeIntervall, ClientNummer, NachrichtenSammler) ->
+simulation(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NummernListe) ->
 
   %Anstossen der Sendefunktion
   werkzeug:logging(LogDatei, "\n%%%%%%%%%%%%%%%%%%%%%\n% client: sendet Nachrichten\n%%%%%%%%%%%%%%%%%%%%%"),
-  sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NachrichtenSammler),
+  sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NummernListe),
 
   %Fehlernachricht provozieren
   ServerPID ! {getmsgid, self()},
-  receive {nnr, Number1} -> Number1 end,
-  werkzeug:logging(LogDatei, integer_to_list(ClientNummer) ++ "-client : " ++ integer_to_list(Number1) ++ "te_Nachricht um " ++ werkzeug:timeMilliSecond() ++ " vergessen zu senden!!!\n"),
+  receive {nnr, Number} -> Number end,
+  werkzeug:logging(LogDatei, integer_to_list(ClientNummer) ++ "-client : " ++ integer_to_list(Number) ++ "te_Nachricht um " ++ werkzeug:timeMilliSecond() ++ " vergessen zu senden!!!\n"),
 
   %Nachrichten abfragen
   werkzeug:logging(LogDatei, "%%%%%%%%%%%%%%%%%%%%%\n% client: fragt Nachrichten ab\n%%%%%%%%%%%%%%%%%%%%%\n\n"),
-  frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler),
+  empfangeNachrichten(LogDatei, ServerPID, NummernListe),
 
   %Neues Intervall für das Versenden der Nachrichten berechnen
   NeuerSendeIntervall = berechneIntervall(SendeIntervall),
 
-  simulation(AnzahlNachrichten, ServerPID, LogDatei, NeuerSendeIntervall, ClientNummer, NachrichtenSammler)
+  simulation(ServerPID, LogDatei, AnzahlNachrichten, NeuerSendeIntervall, ClientNummer, NummernListe)
 .
 
 %Funktion zum Abfragen der Nachrichten
-frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler) ->
+empfangeNachrichten(LogDatei, ServerPID, NummernListe) ->
   ServerPID ! {getmessages, self()},
   receive
     {reply, Number, Nachricht, Terminated} ->
 
       %Prüfung ob die Nachricht die eigene ist
-      NachrichtenSammler ! {istEigeneNachricht, Number, self()},
+      NummernListe ! {finde, self(), Number},
 
-      %falls eigene Nachricht mit ****** Markieren
+      %falls eigene Nachricht, mit ****** Markieren
       receive
-        ok -> NeueNachricht = Nachricht ++ "C In: " ++ werkzeug:timeMilliSecond() ++ "******";
-        nok -> NeueNachricht = Nachricht ++ "C In: " ++ werkzeug:timeMilliSecond()
+        nok -> NeueNachricht = Nachricht ++ "C In: " ++ werkzeug:timeMilliSecond();
+        ok -> NeueNachricht = Nachricht ++ "C In: " ++ werkzeug:timeMilliSecond() ++ "******"
       end,
 
       %empfangene Nachricht Protokollieren
@@ -80,14 +77,14 @@ frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler) ->
       %Prüfung ob es weitere unbekannte Nachrichten gibt
       case Terminated of
         true -> true;
-        false -> frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler)
+        false -> empfangeNachrichten(LogDatei, ServerPID, NummernListe)
       end
   end
 .
 
 %Funktion zum senden von Nachrichten. Sendet Nachrichten
 %%  solange bis alle gesendet sind
-sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NachrichtenSammler) when AnzahlNachrichten > 0 ->
+sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NummernListe) when AnzahlNachrichten > 0 ->
   ServerPID ! {getmsgid, self()},
 
   receive
@@ -101,12 +98,12 @@ sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNum
   ServerPID ! {dropmessage, {Nachricht, Number}},
   werkzeug:logging(LogDatei, Nachricht ++ "\n"),
 
-  NachrichtenSammler ! {add, Number},
+  NummernListe ! {add, Number},
 
-  %Wartezeit zwischen den Nachrichten berechnen und solange warten
+  %Wartezeit zwischen den Nachrichten berechnen und so lange warten
   timer:sleep(round(SendeIntervall*1000)),
 
-  sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten-1, SendeIntervall, ClientNummer, NachrichtenSammler)
+  sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten-1, SendeIntervall, ClientNummer, NummernListe)
 ;
 sendeNachricht(ServerPID, _, _, _, _, _) -> ServerPID.
 
@@ -119,20 +116,20 @@ berechneIntervall(Intervall) ->
   max(1.0, Intervall + Change * Sign)
 .
 
-%Speichert die Nummern der gesendeten
+%Liste zum Speichern der Nummern der gesendeten
 %%  Nachrichten und vergleicht diese auf Anfrage
-nachrichtenNummern(Liste) ->
+liste(Liste) ->
   receive
     {add, Nummer} ->
       NeueListe = [Nummer | Liste],
-      nachrichtenNummern(NeueListe);
+      liste(NeueListe);
 
-    {istEigeneNachricht, Nummer, Pid} ->
-      Flag = lists:member(Nummer, Liste),
+    {finde, Pid, Nummer} ->
+      Test = lists:member(Nummer, Liste),
       if
-        Flag == true -> Pid ! ok;
-        Flag == false ->  Pid ! nok
+        Test == true -> Pid ! ok;
+        Test == false ->  Pid ! nok
       end,
-      nachrichtenNummern(Liste)
+      liste(Liste)
   end
 .
