@@ -1,0 +1,11 @@
+== CLIENT ==
+
+erl -name ... -setcookie vsp
+
+net_adm:ping('server@lab22.cpt.haw-hamburg.de').
+nodes().
+client:start_Multiple({wk, 'server@lab22.cpt.haw-hamburg.de'}, ClientNummer, NumClients).
+
+== SERVER ==
+
+ServerPID = server:start().
