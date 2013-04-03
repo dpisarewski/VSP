@@ -93,7 +93,7 @@ sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNum
 
   %Zu sendende Nachricht zusammenstellen
   {ok, Hostname} = inet:gethostname(),
-  Nachricht = lists:concat(["\n", ClientNummer, "-client@", Hostname, "2", "06", " : ", Number, "te Nachricht. C Out: ", werkzeug:timeMilliSecond()]),
+  Nachricht = lists:concat(["\n", ClientNummer, "-client@", Hostname, "2", "19", " : ", Number, "te Nachricht. C Out: ", werkzeug:timeMilliSecond()]),
 
   ServerPID ! {dropmessage, {Nachricht, Number}},
   werkzeug:logging(LogDatei, Nachricht ++ "\n"),
