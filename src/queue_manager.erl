@@ -22,16 +22,16 @@ manager([HBQ, DQ]) ->
 check_for_gaps(Messages, [HBQ, DQ]) ->
   DQLimit = tools:get_config_value(server, dlq_limit),
   if length(Messages) >= DQLimit / 2 ->
-      fill_gap(Messages, DQ),
-      transfer_messages(Messages, HBQ, DQ);
+      fill_gap(Messages, DQ);
     true -> false
-  end
+  end,
+  transfer_messages(Messages, HBQ, DQ)
 .
 
 %Trägt Nachrichten bis zur nächsten Lücke aus HBQ in die DQ
 transfer_messages(Messages, HBQ, DQ) ->
   LastNumber = find_next_gap(Messages),
-  NewMessages = [Message || Message <- Messages, element(1, Message) =< LastNumber],
+  NewMessages = [append_dq_timestamp(Message) || Message <- Messages, element(1, Message) =< LastNumber],
   DQ  ! {shift, length(NewMessages), tools:get_config_value(server, dlq_limit)},
   DQ  ! {append, NewMessages},
   HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]}
