@@ -1,11 +1,6 @@
 -module(tools).
 -compile([debug_info, export_all]).
 
-logging(Datei,Text) ->
-  file:write_file(Datei,Text,[append]),
-  io:format(Text)
-.
-
 stdout(Text) ->
   io:fwrite(Text)
 .
