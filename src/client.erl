@@ -28,7 +28,7 @@ start(ServerPID, ClientNummer) ->
   {ok, LifeTime} = werkzeug:get_config_value(life_time, ConfigListe),
 
   %Prozess der gesendete und empfangene Nachrichten speichert
-  NachrichtenSammler = spawn(fun() -> nachrichtenNummern([],[1],LogDatei) end),
+  NachrichtenSammler = spawn(fun() -> nachrichtenNummern([]) end),
   %Starten des Clients und anschliessendes senden des Stopsignals um den Timer zu starten
   ClientPID = spawn(fun() -> simulation(AnzahlNachrichten, ServerPID, LogDatei, SendeIntervall, ClientNummer, NachrichtenSammler) end),
   ClientPID ! stop,
@@ -70,8 +70,6 @@ frageNeueNachrichtenAb(LogDatei, ServerPID, NachrichtenSammler) ->
   receive
     {reply, Number, Nachricht, Terminated} ->
 
-      %Nummer der empfangenen Nachricht speichern
-      NachrichtenSammler ! {add, empfangene, Number},
       %Prüfung ob die Nachricht die eigene ist
       NachrichtenSammler ! {istEigeneNachricht, Number, self()},
 
@@ -108,7 +106,7 @@ sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNum
   ServerPID ! {dropmessage, {Nachricht, Number}},
   werkzeug:logging(LogDatei, Nachricht),
 
-  NachrichtenSammler ! {add, gesendete, Number},
+  NachrichtenSammler ! {add, Number},
 
   %Wartezeit zwischen den Nachrichten berechnen und solange warten
   timer:sleep(round(SendeIntervall*1000)),
@@ -121,29 +119,25 @@ sendeNachricht(ServerPID, _, _, _, _, _) -> ServerPID.
 %%  dem Versenden der Nachrichten
 berechneIntervall(Intervall) ->
   %Zufallszahl erzeugen. -50% / +50%
-  Sign = round(random:uniform() - 0.5),
+  Sign = round(random:uniform()) * 2 - 1,
   Change = max(1.0, Intervall * 0.5),
   max(1.0, Intervall + Change * Sign)
 .
 
-%Speichert die Nummern der gesendeten und empfangenen
+%Speichert die Nummern der gesendeten
 %%  Nachrichten und vergleicht diese auf Anfrage
-nachrichtenNummern(Gesendete, Empfangene, LogDatei) ->
+nachrichtenNummern(Liste) ->
   receive
-    {add, gesendete, Nummer} ->
-      NeueGesendete = [Nummer | Gesendete],
-      nachrichtenNummern(NeueGesendete, Empfangene, LogDatei);
+    {add, Nummer} ->
+      NeueListe = [Nummer | Liste],
+      nachrichtenNummern(NeueListe);
 
-    {add, empfangene, Nummer} ->
-      NeueEmpfangene = [Nummer | Empfangene],
-      nachrichtenNummern(Gesendete, NeueEmpfangene, LogDatei);
-
-    {istEigeneNachricht, Nummer, Absender} ->
+    {istEigeneNachricht, Nummer, Pid} ->
       Flag = lists:member(Nummer, Gesendete),
       if
-        Flag == true -> Absender ! ok;
-        Flag == false ->  Absender ! nok
+        Flag == true -> Pid ! ok;
+        Flag == false ->  Pid ! nok
       end,
-      nachrichtenNummern(Gesendete, Empfangene, LogDatei)
+      nachrichtenNummern(Liste)
   end
 .
