@@ -29,7 +29,7 @@ check_for_gaps(Messages, [HBQ, DQ]) ->
   receive
     {messages, Messages} -> LastDQ = element(1, hd(Messages))
   end,
-  tools:log(server, werkzeug:to_String(LastDQ)),
+  tools:log(server, "$$$$" ++ werkzeug:to_String(LastDQ) ++ "$$$$"),
   if LastDQ + 1 <  element(1, hd(Messages)) ->
       false;
     true ->
