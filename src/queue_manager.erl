@@ -23,27 +23,29 @@ check_for_gaps(Messages, [HBQ, DQ]) ->
   DQLimit = tools:get_config_value(server, dlq_limit),
   if length(Messages) >= DQLimit / 2 ->
       fill_gap(Messages, DQ);
-    true -> 0
+    true -> false
   end,
-  DQ ! {getall, self()},
-  receive
-    {messages, Messages} -> LastDQ = element(1, hd(Messages))
-  end,
-  tools:log(server, werkzeug:to_String(LastDQ)),
-  if LastDQ + 1 <  element(1, hd(Messages)) ->
-      false;
-    true ->
-      transfer_messages(Messages, HBQ, DQ)
-  end  
+  transfer_messages(Messages, HBQ, DQ)
 .
 
 %Trägt Nachrichten bis zur nächsten Lücke aus HBQ in die DQ
 transfer_messages(Messages, HBQ, DQ) ->
-  LastNumber = find_next_gap(Messages),
-  NewMessages = [append_dq_timestamp(Message) || Message <- Messages, element(1, Message) =< LastNumber],
-  DQ  ! {shift, length(NewMessages), tools:get_config_value(server, dlq_limit)},
-  DQ  ! {append, NewMessages},
-  HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]}
+  tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages) -> 
+    LastDQ = if 
+      DQMessages == [] -> 0;
+      true -> element(1, lists:last(DQMessages))
+    end,
+    FirstHBQ = element(1, hd(Messages)),
+    LastNumber = find_next_gap(Messages),
+    %tools:stdout(lists:concat(["LastDQ: ", LastDQ, " FirstHBQ: ", FirstHBQ])),
+    if FirstHBQ == LastDQ + 1 ->
+        NewMessages = [Message || Message <- Messages, element(1, Message) =< LastNumber],
+        DQ  ! {shift, length(NewMessages), tools:get_config_value(server, dlq_limit)},
+        DQ  ! {append, NewMessages},
+        HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]};
+      true -> false
+    end
+  end)
 .
 
 %Hängt Information über Verfügbarkeit einer Nachricht in der DQ an diese Nachricht
@@ -79,8 +81,7 @@ fill_gap(Messages, DQ) ->
         DQ  ! {shift, 1, tools:get_config_value(server, dlq_limit)},
         DQ  ! {push, ErrorMessage};
       true -> false
-    end,
-    LastDQ
+    end
   end)
 .
 
