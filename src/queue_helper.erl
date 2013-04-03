@@ -19,6 +19,14 @@ queue(Queue) ->
 
     %Ersetzt alle Nachrichten in der Queue
     {replace, Messages} ->
-      queue(Messages)
+      queue(Messages);
+
+    {shift, N, Max} ->
+      if
+        length(Queue) >= Max ->
+          queue(lists:sublist(Queue, N, Max - N));
+        true ->
+          queue(Queue)
+      end
 	end
 .

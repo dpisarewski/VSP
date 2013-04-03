@@ -30,8 +30,8 @@ loop([HBQ, DQ, Sender, Manager, ClientManager], N, Timer) ->
 
   receive
     {getmsgid, Pid} ->
-      Pid ! {nnr, N},
       tools:log(server, "Server: Nachrichtennummer " ++ werkzeug:to_String(N) ++ " an " ++ werkzeug:to_String(Pid) ++ " gesendet\n"),
+      Pid ! {nnr, N},
       loop([HBQ, DQ, Sender, Manager, ClientManager], N + 1, NewTimer);
 
     {getmessages, Pid} ->

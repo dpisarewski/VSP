@@ -29,7 +29,7 @@ update_client_info(ClientManager, ClientPid, Messages) ->
   %Fragt Clientinformation beim Client Manager
   tools:synchronized_call(ClientManager, {get_client_info, self(), ClientPid}, client_info, fun(Response) ->
     %Kalkuliert neue Nachrichtennummer
-    NewNumber = compute_new_number(extract_info(Response, ClientPid), Messages),
+    NewNumber = compute_new_number(extract_info(Response, ClientPid, Messages), Messages),
     %Speichert Clientinformationen in Clientmanager
     ClientManager ! {set_client_info, {ClientPid, NewNumber, now()}},
     NewNumber
@@ -37,8 +37,8 @@ update_client_info(ClientManager, ClientPid, Messages) ->
 .
 
 %Initialisiert Clientinformation
-init_client(ClientPid) ->
-  {ClientPid, 0, now()}
+init_client(ClientPid, Messages) ->
+  {ClientPid, first_message_number(Messages), now()}
 .
 
 %Gibt die erste Nachrichtennummer aus der Liste der Nachrichten zurück
@@ -47,12 +47,12 @@ first_message_number(Messages) ->
 .
 
 %Extrahiert Clientinformation aus der Antwort vom Clientmanager oder generiert neue
-extract_info(Response, ClientPid) ->
+extract_info(Response, ClientPid, Messages) ->
   if
     Response =/= false ->
       Response;
     true ->
-      init_client(ClientPid)
+      init_client(ClientPid, Messages)
   end
 .
 

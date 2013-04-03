@@ -6,5 +6,6 @@ start(Server, N, Count) when N =< Count ->
   start(Server, N + 1, Count);
 start(_, _, _) ->
   true.
-start(Server, N) ->
+start(N) ->
+  Server = server:start(),
   start(Server, 1, N).

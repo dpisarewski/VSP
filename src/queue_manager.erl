@@ -31,7 +31,9 @@ check_for_gaps(Messages, [HBQ, DQ]) ->
 %Trägt Nachrichten bis zur nächsten Lücke aus HBQ in die DQ
 transfer_messages(Messages, HBQ, DQ) ->
   LastNumber = find_next_gap(Messages),
-  DQ  ! {append, [Message || Message <- Messages, element(1, Message) =< LastNumber]},
+  NewMessages = [Message || Message <- Messages, element(1, Message) =< LastNumber],
+  DQ  ! {shift, length(NewMessages), tools:get_config_value(server, dlq_limit)},
+  DQ  ! {append, NewMessages},
   HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]}
 .
 
@@ -65,6 +67,7 @@ fill_gap(Messages, DQ) ->
     if
       FirstHBQ > LastDQ + 1 ->
         ErrorMessage  = make_error_message(LastDQ + 1, FirstHBQ - 1),
+        DQ  ! {shift, 1, tools:get_config_value(server, dlq_limit)},
         DQ  ! {push, ErrorMessage};
       true -> false
     end
