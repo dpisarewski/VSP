@@ -17,6 +17,11 @@ send_func(DQ, ClientManager) ->
 .
 
 %Sendet eine Nachricht mit angegebener Nachrichtennummer an den Client
+send_message(Pid, [], _) ->
+  Text = "Dummy message. ", Number = 0,
+  tools:log(server, Text ++ "|.(" ++ werkzeug:to_String(Number) ++ ")-getmessages von " ++ werkzeug:to_String(Pid) ++ "-" ++ werkzeug:to_String(true) ++ "\n"),
+  Pid ! {reply, Number, Text, true}
+;
 send_message(Pid, Messages, Number) ->
   MessagesAfter     = [Message || Message <- Messages, element(1, Message) > Number],
   [{Number, Text}]  = [Message || Message <- Messages, element(1, Message) == Number],
@@ -42,6 +47,9 @@ init_client(ClientPid, Messages) ->
 .
 
 %Gibt die erste Nachrichtennummer aus der Liste der Nachrichten zurück
+first_message_number([]) ->
+  0
+;
 first_message_number(Messages) ->
   element(1, hd(Messages))
 .
