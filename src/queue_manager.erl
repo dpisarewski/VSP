@@ -8,14 +8,25 @@ manager([HBQ, DQ]) ->
       NewMessage = append_hbq_timestamp(Message),
       %Loggt die Nachricht
       tools:log(server, element(2, NewMessage) ++ "|-dropmessage\n"),
-        %Fügt die neue Nachricht in die HBQ ein
-        HBQ ! {push, NewMessage},
-        %Fragt alle Nachrighten aus HBQ ab
-        tools:synchronized_call(HBQ, {getall, self()}, messages, fun(Messages)->
-          check_for_gaps(lists:sort(Messages), [HBQ, DQ])
-        end),
-        manager([HBQ, DQ])
+      %Prüfen, ob die Nachricht noch nicht abgearbeitet wurde und in HBQ einfügen
+      check_order(HBQ, DQ, NewMessage),
+      %Fragt alle Nachrighten aus HBQ ab
+      tools:synchronized_call(HBQ, {getall, self()}, messages, fun(Messages)->
+        check_for_gaps(lists:sort(Messages), [HBQ, DQ])
+      end),
+      manager([HBQ, DQ])
   end
+.
+
+%Fügt die empfangene Nachricht in die HBQ ein, wenn sie kleinere Nummer als die größte Nummer in HBQ hat
+check_order(HBQ, DQ, Message) ->
+  tools:synchronized_call(DQ, {getall, self()}, messages, fun(Messages) ->
+    NotProcessed = (Messages == []) orelse (element(1, lists:last(Messages)) > element(1, Message)),
+    if NotProcessed ->  %Fügt die neue Nachricht in die HBQ ein
+        HBQ ! {push, Message};
+      true -> false
+    end
+  end)
 .
 
 %Prüft, ob die HBQ voll ist, ob es eine Lücke gibt, und trägt Nachrichten aus HBQ in die DQ über
@@ -25,7 +36,10 @@ check_for_gaps(Messages, [HBQ, DQ]) ->
       fill_gap(Messages, DQ);
     true -> false
   end,
-  transfer_messages(Messages, HBQ, DQ)
+  if Messages =/= [] ->
+    transfer_messages(Messages, HBQ, DQ);
+    true -> false
+  end
 .
 
 %Trägt Nachrichten bis zur nächsten Lücke aus HBQ in die DQ
