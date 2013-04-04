@@ -20,9 +20,10 @@ manager([HBQ, DQ]) ->
 
 %Fügt die empfangene Nachricht in die HBQ ein, wenn sie kleinere Nummer als die größte Nummer in HBQ hat
 check_order(HBQ, DQ, Message) ->
-  tools:synchronized_call(DQ, {getall, self()}, messages, fun(Messages) ->
-    NotProcessed = (Messages == []) orelse (element(1, lists:last(Messages)) > element(1, Message)),
-    if NotProcessed ->  %Fügt die neue Nachricht in die HBQ ein
+  tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages) ->
+    NotProcessed  = (DQMessages == []) orelse (element(1, lists:last(DQMessages)) < element(1, Message)),
+    if NotProcessed ->
+        %Fügt die neue Nachricht in die HBQ ein
         HBQ ! {push, Message};
       true -> false
     end

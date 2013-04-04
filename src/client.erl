@@ -4,7 +4,7 @@
 
 %Startfunktion zum Starten mehrerer Clients
 startMultiple(ServerPID, ClientNummer, Remaining) when Remaining > 0 ->
-	Fun = spawn(fun() -> start(ServerPID, ClientNummer) end),
+	spawn(fun() -> start(ServerPID, ClientNummer) end),
 	startMultiple(ServerPID, ClientNummer + 1, Remaining - 1);
 startMultiple(ServerPID, _, _) -> ServerPID.
 	
