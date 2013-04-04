@@ -18,22 +18,20 @@ manager([HBQ, DQ]) ->
   end
 .
 
-%Fügt die empfangene Nachricht in die HBQ ein, wenn sie kleinere Nummer als die größte Nummer in HBQ hat
+%Fügt die empfangene Nachricht in die HBQ ein, wenn sie kleinere Nummer als die größte Nummer in DQ hat
 check_order(HBQ, DQ, Message) ->
-  tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages) ->
-    NotProcessed  = (DQMessages == []) orelse (element(1, lists:last(DQMessages)) < element(1, Message)),
-    if NotProcessed ->
-        %Fügt die neue Nachricht in die HBQ ein
-        HBQ ! {push, Message};
-      true -> false
-    end
-  end)
+  LastDQ    = get_last_dq(DQ),
+  if LastDQ < element(1, Message) ->
+  %Fügt die neue Nachricht in die HBQ ein
+    HBQ ! {push, Message};
+    true -> false
+  end
 .
 
 %Prüft, ob die HBQ voll ist, ob es eine Lücke gibt, und trägt Nachrichten aus HBQ in die DQ über
 check_for_gaps(Messages, [HBQ, DQ]) ->
   DQLimit = tools:get_config_value(server, dlq_limit),
-  if length(Messages) >= DQLimit / 2 ->
+  if length(Messages) >= (DQLimit / 2) ->
       fill_gap(Messages, DQ);
     true -> false
   end,
@@ -45,22 +43,16 @@ check_for_gaps(Messages, [HBQ, DQ]) ->
 
 %Trägt Nachrichten bis zur nächsten Lücke aus HBQ in die DQ
 transfer_messages(Messages, HBQ, DQ) ->
-  tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages) -> 
-    LastDQ = if 
-      DQMessages == [] -> 0;
-      true -> element(1, lists:last(DQMessages))
-    end,
-    FirstHBQ = element(1, hd(Messages)),
-    LastNumber = find_next_gap(Messages),
-    %tools:stdout(lists:concat(["LastDQ: ", LastDQ, " FirstHBQ: ", FirstHBQ])),
-    if FirstHBQ == LastDQ + 1 ->
-        NewMessages = [Message || Message <- Messages, element(1, Message) =< LastNumber],
-        DQ  ! {shift, length(NewMessages), tools:get_config_value(server, dlq_limit)},
-        DQ  ! {append, NewMessages},
-        HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]};
-      true -> false
-    end
-  end)
+  LastDQ      = get_last_dq(DQ),
+  FirstHBQ    = element(1, hd(Messages)),
+  LastNumber  = find_next_gap(Messages),
+  if FirstHBQ == LastDQ + 1 ->
+      NewMessages = [Message || Message <- Messages, element(1, Message) =< LastNumber],
+      DQ  ! {shift, length(NewMessages), tools:get_config_value(server, dlq_limit)},
+      DQ  ! {append, NewMessages},
+      HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]};
+    true -> false
+  end
 .
 
 %Hängt Information über Verfügbarkeit einer Nachricht in der DQ an diese Nachricht
@@ -82,20 +74,21 @@ fill_gap(Messages, DQ) ->
   %Holt die erste Nachrichtennummer aus HBQ
   FirstHBQ  = element(1, hd(Messages)),
   %Fragt alle Nachrichten aus DQ ab, um die letzte Nachrichtennummer zu bestimmen
-  tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages)->
-    %Bestimmt die letzte Nachrichtennummer in DQ
-    LastDQ = if
-      DQMessages =/= [] ->
-        element(1, lists:last(DQMessages));
-      true -> 0
-    end,
-    %Prüft, ob eine Lücke existiert, und füllt sie mit einer Fehlernachricht
-    if
-      FirstHBQ > LastDQ + 1 ->
-        ErrorMessage  = make_error_message(LastDQ + 1, FirstHBQ - 1),
-        DQ  ! {shift, 1, tools:get_config_value(server, dlq_limit)},
-        DQ  ! {push, ErrorMessage};
-      true -> false
+  %Bestimmt die letzte Nachrichtennummer in DQ
+  LastDQ    = get_last_dq(DQ),
+  %Prüft, ob eine Lücke existiert, und füllt sie mit einer Fehlernachricht
+  if FirstHBQ > LastDQ + 1 ->
+      ErrorMessage  = make_error_message(LastDQ + 1, FirstHBQ - 1),
+      DQ  ! {shift, 1, tools:get_config_value(server, dlq_limit)},
+      DQ  ! {push, ErrorMessage};
+    true -> false
+  end
+.
+
+get_last_dq(DQ) ->
+  tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages) ->
+    if DQMessages == [] -> 0;
+      true -> element(1, lists:last(DQMessages))
     end
   end)
 .

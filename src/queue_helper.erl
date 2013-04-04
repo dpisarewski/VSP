@@ -24,7 +24,7 @@ queue(Queue) ->
     {shift, N, Max} ->
       if
         length(Queue) >= Max ->
-          queue(lists:sublist(Queue, N, Max - N));
+          queue(lists:sublist(Queue, N + 1, Max - N + 1));
         true ->
           queue(Queue)
       end

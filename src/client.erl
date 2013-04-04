@@ -44,7 +44,7 @@ start(ServerPID, ClientNummer) ->
 simulation(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NummernListe) ->
 
   %Anstossen der Sendefunktion
-  werkzeug:logging(LogDatei, "\n%%%%%%%%%%%%%%%%%%%%%\n% client: sendet Nachrichten\n%%%%%%%%%%%%%%%%%%%%%"),
+  werkzeug:logging(LogDatei, "\n%%%%%%%%%%%%%%%%%%%%%\n% client: sendet Nachrichten\n%%%%%%%%%%%%%%%%%%%%%\n\n"),
   sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNummer, NummernListe),
 
   %Fehlernachricht provozieren

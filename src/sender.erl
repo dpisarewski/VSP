@@ -42,8 +42,8 @@ update_client_info(ClientManager, ClientPid, Messages) ->
 .
 
 %Initialisiert Clientinformation
-init_client(ClientPid, Messages) ->
-  {ClientPid, first_message_number(Messages), now()}
+init_client(ClientPid, _) ->
+  {ClientPid, 0, now()}
 .
 
 %Gibt die erste Nachrichtennummer aus der Liste der Nachrichten zurück
