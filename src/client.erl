@@ -1,13 +1,21 @@
 -module(client).
 -author("dpisarewski windowsfreak").
--export([start/2,startMultiple/3]).
+-export([start/2,startMultiple/2]).
 
-%Startfunktion zum Starten mehrerer Clients
-startMultiple(ServerPID, ClientNummer, Remaining) when Remaining > 0 ->
-	spawn(fun() -> start(ServerPID, ClientNummer) end),
-	startMultiple(ServerPID, ClientNummer + 1, Remaining - 1);
-startMultiple(ServerPID, _, _) -> ServerPID.
-	
+startMultiple(Server, N, Count) when N =< Count ->
+  spawn(fun()-> client:start(Server, N) end),
+  startMultiple(Server, N + 1, Count);
+startMultiple(_, _, _) ->
+  true.
+startMultiple(ServerNode, N) ->
+  ServerName  = tools:get_config_value(client, servername),
+  Server      = {ServerName, ServerNode},
+  case net_adm:ping(ServerNode) of
+    pong -> startMultiple(Server, 1, N);
+    pang -> tools:stdout(lists:concat(["Keine Antwort von ", ServerNode]))
+  end
+  .
+
 %Startfunktion. Wird als allererstes gestartet
 %Es werden die Konfigurationsdatei eingelesen
 %und Parameter von dem Client-Prozess gesetzt
@@ -99,7 +107,7 @@ sendeNachricht(ServerPID, LogDatei, AnzahlNachrichten, SendeIntervall, ClientNum
 
   %Zu sendende Nachricht zusammenstellen
   {ok, Hostname} = inet:gethostname(),
-  Nachricht = lists:concat(["\n", ClientNummer, "-client@", Hostname, "2", "19", " : ", Number, "te Nachricht. C Out: ", werkzeug:timeMilliSecond()]),
+  Nachricht = lists:concat(["\n", ClientNummer, "-client@", Hostname, " 2", "-19", " : ", Number, "te Nachricht. C Out: ", werkzeug:timeMilliSecond()]),
 
   ServerPID ! {dropmessage, {Nachricht, Number}},
   werkzeug:logging(LogDatei, Nachricht ++ "\n"),
