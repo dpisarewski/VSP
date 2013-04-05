@@ -8,4 +8,6 @@ deps
 *.plt
 *.tmp
 *.log
+.idea
+*.iml
 out/*
