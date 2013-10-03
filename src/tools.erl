@@ -6,8 +6,13 @@ stdout(Text) ->
 .
 
 get_config_value(ConfigFile, Name) ->
-  {ok, Config} = file:consult(werkzeug:to_String(ConfigFile) ++ ".cfg"),
-  return_value_or_false(lists:keyfind(Name, 1, Config))
+  Result = file:consult(werkzeug:to_String(ConfigFile) ++ ".cfg"),
+  if element(1, Result) == ok ->
+      {ok, Config} = Result,
+      return_value_or_false(lists:keyfind(Name, 1, Config));
+    true ->
+      throw(lists:concat(["could not find configuration parameter: ", Name]))
+  end
 .
 
 return_value_or_false(Tuple) when Tuple == false -> false;

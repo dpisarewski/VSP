@@ -1,6 +1,7 @@
 %% Copyright
 -module(client).
 -author("Dieter Pisarewski, Maxim Rjabenko").
+-compile([debug_info, export_all]).
 
 start(ClientNumber) ->
   spawn(loop)
