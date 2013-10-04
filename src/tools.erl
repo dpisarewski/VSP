@@ -6,7 +6,7 @@ stdout(Text) ->
 .
 
 get_config_value(ConfigFile, Name) ->
-  Result = file:consult(werkzeug:to_String(ConfigFile) ++ ".cfg"),
+  Result = file:consult("config/" ++ ConfigFile ++ ".cfg"),
   if element(1, Result) == ok ->
       {ok, Config} = Result,
       return_value_or_false(lists:keyfind(Name, 1, Config));
@@ -41,6 +41,14 @@ synchronized_call(Process, Params, ResponseLabel, Callback) ->
     {ResponseLabel, Data}->
       Callback(Data)
   end
+.
+
+times(0, Fun) ->
+  do_nothing
+;
+times(N, Fun) ->
+  Fun(),
+  times(N - 1, Fun)
 .
 
 log(ConfigFile, Message) ->
