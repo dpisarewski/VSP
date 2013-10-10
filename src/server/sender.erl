@@ -4,12 +4,14 @@
     %Sendet neue Nachricht an den Client
 deliver_messages(DQ, ClientManager, Pid) ->
   %Holt alle Nachrichten aus DQ, um die letzte gesendete Nachrichtennummer zu bestimmen
-  tools:synchronized_call(DQ, {getall, self()}, messages, fun(Messages)->
-    %Aktualisiert die letzte gesendete Nachrichtennummer und die Zeit der Kommunikation mit dem Client
-    NextMessageNumber = update_client_info(ClientManager, Pid, Messages),
-    %Sendet eine neue Nachricht an den Client
-    send_message(Pid, Messages, NextMessageNumber)
-  end)
+  DQ ! {getall, self()},
+  receive
+    {messages, Messages} ->
+      %Aktualisiert die letzte gesendete Nachrichtennummer und die Zeit der Kommunikation mit dem Client
+      NextMessageNumber = update_client_info(ClientManager, Pid, Messages),
+      %Sendet eine neue Nachricht an den Client
+      send_message(Pid, Messages, NextMessageNumber)
+  end
 .
 
 %Sendet eine Nachricht mit angegebener Nachrichtennummer an den Client
@@ -28,17 +30,19 @@ send_message(Pid, Messages, Number) ->
 %Aktualisiert Clientinformation(letzte gesendete Nachrichtennummer und die Zeit der Kommunikation)
 update_client_info(ClientManager, ClientPid, Messages) ->
   %Fragt Clientinformation beim Client Manager
-  tools:synchronized_call(ClientManager, {get_client_info, self(), ClientPid}, client_info, fun(Response) ->
-    %Kalkuliert neue Nachrichtennummer
-    NewNumber = compute_new_number(extract_info(Response, ClientPid, Messages), Messages),
-    %Speichert Clientinformationen in Clientmanager
-    ClientManager ! {set_client_info, {ClientPid, NewNumber, now()}},
-    NewNumber
-  end)
+  ClientManager ! {get_client_info, self(), ClientPid},
+  receive
+    {client_info, ClientInfo} ->
+      %Kalkuliert neue Nachrichtennummer
+      NewNumber = compute_new_number(extract_info(ClientInfo, ClientPid), Messages),
+      %Speichert Clientinformationen in Clientmanager
+      ClientManager ! {set_client_info, {ClientPid, NewNumber, now()}},
+      NewNumber
+  end
 .
 
 %Initialisiert Clientinformation
-init_client(ClientPid, _) ->
+init_client(ClientPid) ->
   {ClientPid, 0, now()}
 .
 
@@ -51,12 +55,12 @@ first_message_number(Messages) ->
 .
 
 %Extrahiert Clientinformation aus der Antwort vom Clientmanager oder generiert neue
-extract_info(Response, ClientPid, Messages) ->
+extract_info(Response, ClientPid) ->
   if
     Response =/= false ->
       Response;
     true ->
-      init_client(ClientPid, Messages)
+      init_client(ClientPid)
   end
 .
 

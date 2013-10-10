@@ -27,6 +27,18 @@ queue(Queue) ->
           queue(lists:sublist(Queue, N + 1, Max - N + 1));
         true ->
           queue(Queue)
-      end
+      end;
+
+    {first, Pid} ->
+      Pid ! {first, hd(Queue)},
+      queue(Queue);
+
+    {last, Pid} ->
+      if Queue == [] ->
+          Pid ! {last, none};
+        true ->
+          Pid ! {last, lists:last(Queue)}
+      end,
+      queue(Queue)
 	end
 .

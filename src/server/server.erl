@@ -25,7 +25,7 @@ start() ->
 
 loop([HBQ, DQ, Manager, ClientManager], N, Timer) ->
   %Startet einen Timer, der nach dem Ablauf eines Zeitintervals den Protzess beendet
-  NewTimer = renew_timer(Timer),
+  NewTimer = renew_timer(Timer, [HBQ, DQ, Manager, ClientManager]),
 
   receive
     {getmsgid, Pid} ->
@@ -43,13 +43,18 @@ loop([HBQ, DQ, Manager, ClientManager], N, Timer) ->
   end
 .
 
-renew_timer(Timer) ->
+renew_timer(Timer, Processes) ->
   if
     Timer == no_timer ->
       false;
     true ->
       timer:cancel(Timer)
   end,
-  {ok, NewTimer} = timer:exit_after(tools:get_config_value(server, latency) * 1000, "Terminating execution because no clients available\n"),
+  {ok, NewTimer} = timer:apply_after(tools:get_config_value(server, latency) * 1000, ?MODULE, stop, [Processes]),
   NewTimer
+.
+
+stop(Processes) ->
+  tools:log(server, "Terminating execution because no clients available\n"),
+  [exit(Process, ok) || Process <- Processes]
 .

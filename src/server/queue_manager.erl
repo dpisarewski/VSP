@@ -11,9 +11,10 @@ manager([HBQ, DQ]) ->
       %Prüfen, ob die Nachricht noch nicht abgearbeitet wurde und in HBQ einfügen
       check_order(HBQ, DQ, NewMessage),
       %Fragt alle Nachrighten aus HBQ ab
-      tools:synchronized_call(HBQ, {getall, self()}, messages, fun(Messages)->
-        check_for_gaps(lists:sort(Messages), [HBQ, DQ])
-      end),
+      HBQ ! {getall, self()},
+      receive
+        {messages, Messages} -> check_for_gaps(lists:sort(Messages), [HBQ, DQ])
+      end,
       manager([HBQ, DQ])
   end
 .
@@ -22,7 +23,7 @@ manager([HBQ, DQ]) ->
 check_order(HBQ, DQ, Message) ->
   LastDQ    = get_last_dq(DQ),
   if LastDQ < element(1, Message) ->
-  %Fügt die neue Nachricht in die HBQ ein
+    %Fügt die neue Nachricht in die HBQ ein
     HBQ ! {push, Message};
     true -> false
   end
@@ -36,7 +37,7 @@ check_for_gaps(Messages, [HBQ, DQ]) ->
     true -> false
   end,
   if Messages =/= [] ->
-    transfer_messages(Messages, HBQ, DQ);
+      transfer_messages(Messages, HBQ, DQ);
     true -> false
   end
 .
@@ -86,11 +87,15 @@ fill_gap(Messages, DQ) ->
 .
 
 get_last_dq(DQ) ->
-  tools:synchronized_call(DQ, {getall, self()}, messages, fun(DQMessages) ->
-    if DQMessages == [] -> 0;
-      true -> element(1, lists:last(DQMessages))
-    end
-  end)
+  DQ ! {last, self()},
+  receive
+    {last, Last} ->
+      if Last == none ->
+          0;
+        true ->
+          element(1, Last)
+      end
+  end
 .
 
 %Generiert eine Fehlernachricht
