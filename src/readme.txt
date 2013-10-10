@@ -4,7 +4,7 @@ Der Server kann mit dem Kommando server:start(). gestartet werden.
 Er registriert sich mit dem in Konfigurationsdatei server.cfg angegebenen Namen.
 
 Der Server kann durch die server.cfg Datei konfiguriert werden:
-lifetime            Zeit in Sekunden, die der Server ungenutzt laufen kann
+latency             Zeit in Sekunden, die der Server ungenutzt laufen kann
 clientlifetime      Zeit in Sekunden, nach der ein Client vergossen wird
 servername          Name des Serverprozesses
 dlq_limit           Größe der DeliveryQueue
@@ -18,6 +18,6 @@ Als 2 Argument gibt man die Anzahl der Clients, die man starten möchte.
 Der Name des Serverprozesses lässt sich durch die Konfigurationsdatei client.cfg konfigurieren:
 
 servername          Name des Serverprozesses
-life_time           Zeit in Sekunden, die ein Client lebt
-intervall           Zeitintervall in Sekunden zwischen Absenden von Nachrichten(als Redaktuer) an den Server
+lifetime            Zeit in Sekunden, die ein Client lebt
+sendeintervall           Zeitintervall in Sekunden zwischen Absenden von Nachrichten(als Redaktuer) an den Server
 anzahl_nachrichten  Anzahl von Nachrichten, die der Redaktuer-Client absendet, bevor er zum Lese-Client wechselt

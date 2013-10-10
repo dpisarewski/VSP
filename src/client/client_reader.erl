@@ -8,7 +8,7 @@ start(Server, Writer, ClientNumber, LogFile) ->
 
 loop(Server, Writer, ClientNumber, LogFile)->
   receive
-    get_new_messages ->
+    read_messages ->
       read_messages(Server, Writer, LogFile)
   end,
   loop(Server, Writer, ClientNumber, LogFile)
@@ -40,7 +40,8 @@ check_if_own_message(Number, Writer) ->
 mark_message(Message, Writer) ->
   {Number, Text}  = Message,
   TempMessage     = lists:concat([Text, " C In: " , werkzeug:timeMilliSecond(), "|"]),
-  if check_if_own_message(Number, Writer) ->
+  IsOwn = check_if_own_message(Number, Writer),
+  if IsOwn ->
       MarkMessage = {Number, lists:concat([TempMessage, "*******;"])};
     true ->
       MarkMessage = {Number, TempMessage}

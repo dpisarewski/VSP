@@ -10,4 +10,4 @@ start(N) ->
   Server = server:start(),
   start(Server, 1, N).
 start() ->
-  start(tools:get_config_value(demo, clients)).
+  start(tools:get_config_value(client, clients)).

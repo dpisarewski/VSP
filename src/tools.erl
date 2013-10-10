@@ -6,7 +6,7 @@ stdout(Text) ->
 .
 
 get_config_value(ConfigFile, Name) ->
-  Result = file:consult("config/" ++ ConfigFile ++ ".cfg"),
+  Result = file:consult(lists:concat(["config/", ConfigFile,".cfg"])),
   if element(1, Result) == ok ->
       {ok, Config} = Result,
       return_value_or_false(lists:keyfind(Name, 1, Config));
