@@ -3,6 +3,13 @@
 -author("Dieter Pisarewski, Maxim Rjabenko").
 -compile([debug_info, export_all]).
 
+start(ServerNode) ->
+  Clients = tools:get_config_value(client, clients),
+  tools:times(Clients, fun(ClientNumber) ->
+    start(ServerNode, ClientNumber)
+  end)
+.
+
 start(ServerNode, ClientNumber) ->
   LogFile     = lists:concat(["log/", "client_", ClientNumber, "@", element(2, inet:gethostname()), ".log"]),
   file:delete(LogFile),
@@ -14,7 +21,7 @@ start(ServerNode, ClientNumber) ->
     werkzeug:logging(LogFile, lists:concat(["Client ", ClientNumber, " started\n"])),
     timer:apply_after(tools:get_config_value(client, lifetime) * 1000, ?MODULE, stop, [[self(), Writer, Reader]]),
     loop(Server, Writer, Reader, ClientNumber, LogFile)
-end)
+  end)
 .
 
 loop(Server, Writer, Reader, ClientNumber, LogFile) ->

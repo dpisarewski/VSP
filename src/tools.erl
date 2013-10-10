@@ -47,7 +47,7 @@ times(0, Fun) ->
   do_nothing
 ;
 times(N, Fun) ->
-  Fun(),
+  Fun(N),
   times(N - 1, Fun)
 .
 
