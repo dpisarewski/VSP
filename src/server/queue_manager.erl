@@ -47,7 +47,7 @@ transfer_messages(Messages, HBQ, DQ) ->
   FirstHBQ    = element(1, hd(Messages)),
   LastNumber  = find_next_gap(Messages),
   if FirstHBQ == LastDQ + 1 ->
-      NewMessages = [Message || Message <- Messages, element(1, Message) =< LastNumber],
+      NewMessages = [append_dq_timestamp(Message) || Message <- Messages, element(1, Message) =< LastNumber],
       DQ  ! {shift, length(NewMessages), tools:get_config_value(server, dlq_limit)},
       DQ  ! {append, NewMessages},
       HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]};

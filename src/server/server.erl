@@ -13,6 +13,7 @@ start() ->
     tools:reregister(queue_manager, QueueManager),
     tools:reregister(client_manager, ClientManager),
 
+    file:delete(tools:get_config_value(server, log_file)),
     tools:log(server, "Server Startzeit: " ++ werkzeug:timeMilliSecond() ++ "| mit PID " ++ werkzeug:to_String(self()) ++ "\n"),
 
     loop([HBQ, DQ, QueueManager, ClientManager], 1, no_timer)

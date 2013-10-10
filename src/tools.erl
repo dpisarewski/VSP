@@ -52,6 +52,6 @@ times(N, Fun) ->
 .
 
 log(ConfigFile, Message) ->
-  File = get_config_value(ConfigFile, log_datei),
+  File = get_config_value(ConfigFile, log_file),
   werkzeug:logging(File, Message)
 .

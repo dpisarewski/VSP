@@ -2,16 +2,17 @@
 -author("Dieter Pisarewski, Maxim Rjabenko").
 -compile([debug_info, export_all]).
 
-start(Server, Writer, ClientNumber, LogFile) ->
-  spawn(fun() -> loop(Server, Writer, ClientNumber, LogFile) end)
+start(Server, Client, Writer, ClientNumber, LogFile) ->
+  spawn_link(fun() -> loop(Server, Client, Writer, ClientNumber, LogFile) end)
 .
 
-loop(Server, Writer, ClientNumber, LogFile)->
+loop(Server, Client, Writer, ClientNumber, LogFile)->
   receive
     read_messages ->
       read_messages(Server, Writer, LogFile)
   end,
-  loop(Server, Writer, ClientNumber, LogFile)
+  Client ! ok,
+  loop(Server, Client, Writer, ClientNumber, LogFile)
 .
 
 read_messages(Server, Writer, LogFile) ->
@@ -20,7 +21,7 @@ read_messages(Server, Writer, LogFile) ->
     {reply, Number, Text, Terminate} ->
 
       Message = mark_message({Number, Text},Writer),
-      werkzeug:logging(LogFile, Message),
+      werkzeug:logging(LogFile, element(2, Message) ++ "\n"),
 
       if Terminate ->
         do_nothing;
@@ -42,8 +43,8 @@ mark_message(Message, Writer) ->
   TempMessage     = lists:concat([Text, " C In: " , werkzeug:timeMilliSecond(), "|"]),
   IsOwn = check_if_own_message(Number, Writer),
   if IsOwn ->
-      MarkMessage = {Number, lists:concat([TempMessage, "*******;"])};
+      {Number, lists:concat([TempMessage, "*******;"])};
     true ->
-      MarkMessage = {Number, TempMessage}
+      {Number, TempMessage}
   end
 .
