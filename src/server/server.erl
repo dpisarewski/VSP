@@ -2,16 +2,18 @@
 -compile([debug_info, export_all]).
 
 start() ->
+
   Server = spawn(fun() ->
     ClientManager   = spawn_link(fun() -> client_manager:loop([]) end),
     tools:reregister(client_manager, ClientManager),
-
+    %Löscht alte vorhadene Logdatei
     file:delete(tools:get_config_value(server, log_file)),
     tools:log(server, "Server Startzeit: " ++ werkzeug:timeMilliSecond() ++ "| mit PID " ++ werkzeug:to_String(self()) ++ "\n"),
 
     loop([], [], ClientManager, 1, no_timer)
   end),
 
+  %Prüft, ob ein Prozess mit angegebenem Namen registriert ist, töten ihn und registriert neuen Prozess mit diesem Namen
   tools:reregister(tools:get_config_value(server, servername), Server),
   Server
 .

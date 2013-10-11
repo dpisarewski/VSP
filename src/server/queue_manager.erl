@@ -36,14 +36,22 @@ check_for_gaps(HBQ, DQ) ->
 %Trägt Nachrichten bis zur nächsten Lücke aus HBQ in die DQ
 transfer_messages(HBQ, DQ) ->
   if HBQ =/=[]->
+    %Fragt die letzte Nachrichtennummer ab
     LastDQ      = get_last_dq(DQ),
+    %Fragt die erste Nachrichtennummer in HBQ ab
     FirstHBQ    = element(1, hd(HBQ)),
+    %Fragt die letzte Nachrichtennummer in HBQ ab, die vor nächster Lücke steht
     LastNumber  = find_next_gap(HBQ),
+    %Prüft, ob es eine Lücke zwischen DQ und HBQ gibt
     if FirstHBQ == LastDQ + 1 ->
+        %Lädt die größe der Delivery Queue aus der Konfiguration
+        DQLimit     =  tools:get_config_value(server, dlq_limit),
+        %Hängt Zeitstempel an die Nachrichten, die in die Deliveryqueue zu übertragen sind
         NewMessages = [append_dq_timestamp(Message) || Message <- HBQ, element(1, Message) =< LastNumber],
-        DQLimit =  tools:get_config_value(server, dlq_limit),
-        NewDQ = lists:append(queue_helper:shift(DQ, length(NewMessages), DQLimit), NewMessages),
-        NewHBQ = [Message || Message <- HBQ, element(1, Message) > LastNumber],
+        %Trägt Nachrichten aus Holdbackqueue in die Deliveryqueue über
+        NewDQ       = lists:append(queue_helper:shift(DQ, length(NewMessages), DQLimit), NewMessages),
+        %Löscht die übertragenen Nachrichten
+        NewHBQ      = [Message || Message <- HBQ, element(1, Message) > LastNumber],
         [NewHBQ, NewDQ];
       true -> [HBQ, DQ]
     end;
@@ -74,13 +82,17 @@ fill_gap(Messages, DQ) ->
   LastDQ    = get_last_dq(DQ),
   %Prüft, ob eine Lücke existiert, und füllt sie mit einer Fehlernachricht
   if FirstHBQ > LastDQ + 1 ->
+      %Generiert eine Fehlernachricht
       ErrorMessage  = make_error_message(LastDQ + 1, FirstHBQ - 1),
-      DQLimit = tools:get_config_value(server, dlq_limit),
+      %Lädt die Größe der Deliveryqueue aus der Konfiguration
+      DQLimit       = tools:get_config_value(server, dlq_limit),
+      %Fügt die Fehlernachricht in die Deliveryqueue
       lists:append(queue_helper:shift(DQ, 1, DQLimit), [ErrorMessage]);
     true -> DQ
   end
 .
 
+%Gibt die letzte Nachrichtennummer aus DQ zuruck
 get_last_dq(DQ) ->
   if DQ == [] ->
       0;

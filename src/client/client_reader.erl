@@ -2,6 +2,7 @@
 -author("Dieter Pisarewski, Maxim Rjabenko").
 -compile([debug_info, export_all]).
 
+%Ruft neue Nachrichten vom Server ab
 read_messages(Server, LogFile, MessageNumbers) ->
   Server ! {getmessages, self()},
   receive
@@ -18,6 +19,7 @@ read_messages(Server, LogFile, MessageNumbers) ->
   end
 .
 
+%Markiert eigene Nachricht mit Sternen
 mark_message(Message, MessageNumbers) ->
   {Number, Text}  = Message,
   TempMessage     = lists:concat([Text, " C In: " , werkzeug:timeMilliSecond(), "|"]),

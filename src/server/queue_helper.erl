@@ -1,11 +1,11 @@
 -module(queue_helper).
 -compile([debug_info, export_all]).
 
-
-shift(Queue, N, Max) ->
+%Löscht die erste N Nachrichten
+shift(Queue, N, DQLimit) ->
   if
-    length(Queue) >= Max ->
-      lists:sublist(Queue, N + 1, Max - N + 1);
+    length(Queue) >= DQLimit ->
+      lists:sublist(Queue, N + 1, DQLimit - N + 1);
     true ->
       Queue
   end
