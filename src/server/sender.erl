@@ -3,15 +3,10 @@
 
     %Sendet neue Nachricht an den Client
 deliver_messages(DQ, ClientManager, Pid) ->
-  %Holt alle Nachrichten aus DQ, um die letzte gesendete Nachrichtennummer zu bestimmen
-  DQ ! {getall, self()},
-  receive
-    {messages, Messages} ->
-      %Aktualisiert die letzte gesendete Nachrichtennummer und die Zeit der Kommunikation mit dem Client
-      NextMessageNumber = update_client_info(ClientManager, Pid, Messages),
-      %Sendet eine neue Nachricht an den Client
-      send_message(Pid, Messages, NextMessageNumber)
-  end
+  %Aktualisiert die letzte gesendete Nachrichtennummer und die Zeit der Kommunikation mit dem Client
+  NextMessageNumber = update_client_info(ClientManager, Pid, DQ),
+  %Sendet eine neue Nachricht an den Client
+  send_message(Pid, DQ, NextMessageNumber)
 .
 
 %Sendet eine Nachricht mit angegebener Nachrichtennummer an den Client
@@ -20,9 +15,9 @@ send_message(Pid, [], _) ->
   tools:log(server, Text ++ "|.(" ++ werkzeug:to_String(Number) ++ ")-getmessages von " ++ werkzeug:to_String(Pid) ++ "-" ++ werkzeug:to_String(true) ++ "\n"),
   Pid ! {reply, Number, Text, true}
 ;
-send_message(Pid, Messages, Number) ->
-  MessagesAfter     = [Message || Message <- Messages, element(1, Message) > Number],
-  [{Number, Text}]  = [Message || Message <- Messages, element(1, Message) == Number],
+send_message(Pid, DQ, Number) ->
+  MessagesAfter     = [Message || Message <- DQ, element(1, Message) > Number],
+  [{Number, Text}]  = [Message || Message <- DQ, element(1, Message) == Number],
   tools:log(server, Text ++ "|.(" ++ werkzeug:to_String(Number) ++ ")-getmessages von " ++ werkzeug:to_String(Pid) ++ "-" ++ werkzeug:to_String(MessagesAfter == []) ++ "\n"),
 	Pid ! {reply, Number, Text, MessagesAfter == []}
 .

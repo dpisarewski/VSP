@@ -11,3 +11,4 @@ deps
 .idea
 *.iml
 out/*
+*.dump

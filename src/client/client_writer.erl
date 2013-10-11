@@ -2,25 +2,11 @@
 -author("Dieter Pisarewski, Maxim Rjabenko").
 -compile([debug_info, export_all]).
 
-start(Server, Client, ClientNumber, LogFile) ->
-  spawn_link(fun() -> loop(Server, Client, ClientNumber, LogFile, [], tools:get_config_value(client, sendeintervall)) end)
-.
-
-loop(Server, Client, ClientNumber, LogFile, MessageNumbers, Interval)->
-  NewInterval = calculateInterval(Interval),
-  receive
-    send_messages ->
-      NewMessageNumbers   = send_messages(Server, ClientNumber, NewInterval, MessageNumbers, tools:get_config_value(client, anzahl_nachrichten), LogFile),
-      DummyMessageNumber  = get_next_number(Server),
-      werkzeug:logging(LogFile, lists:concat([DummyMessageNumber, "te Nachricht um ", werkzeug:timeMilliSecond(), "| vergessen zu senden ******\n"])) ,
-      Client ! ok,
-      loop(Server, Client, ClientNumber, LogFile, lists:append(MessageNumbers, NewMessageNumbers), NewInterval);
-
-    %Prüft, ob angegebene Nachrichtennummer vom eigenen Redakteur generiert wurde
-    {own_message, N, Pid} ->
-      Pid ! {own_message, lists:member(N, MessageNumbers)},
-      loop(Server, Client, ClientNumber, LogFile, MessageNumbers, NewInterval)
-  end
+deliver_messages(Server, ClientNumber, LogFile, MessageNumbers, Interval) ->
+  NewMessageNumbers   = send_messages(Server, ClientNumber, Interval, MessageNumbers, tools:get_config_value(client, anzahl_nachrichten), LogFile),
+  DummyMessageNumber  = get_next_number(Server),
+  werkzeug:logging(LogFile, lists:concat([DummyMessageNumber, "te Nachricht um ", werkzeug:timeMilliSecond(), "| vergessen zu senden ******\n"])),
+  NewMessageNumbers
 .
 
 send_messages(Server, ClientNumber, Interval, MessageNumbers, N, LogFile) when N > 0 ->
@@ -50,11 +36,4 @@ generate_message(ClientNumber, MessageNumber) ->
 send_message(Server, Message) ->
   {MessageNumber, Text} = Message,
   Server ! {dropmessage, {Text, MessageNumber}}
-.
-
-calculateInterval(Intervall) ->
-  %Zufallszahl erzeugen. -50% / +50%
-  Sign    = round(random:uniform()) * 2 - 1,
-  Change  = max(1.0, Intervall * 0.5),
-  max(2.0, Intervall + Change * Sign)
 .

@@ -43,13 +43,15 @@ synchronized_call(Process, Params, ResponseLabel, Callback) ->
   end
 .
 
-times(0, Fun) ->
-  do_nothing
-;
 times(N, Fun) ->
-  Fun(N),
-  times(N - 1, Fun)
+  upto(1, N, Fun)
 .
+
+upto(From, To, Fun) when From =< To ->
+  Fun(From),
+  upto(From + 1, To, Fun);
+upto(_, _, _) ->
+  do_nothing.
 
 log(ConfigFile, Message) ->
   File = get_config_value(ConfigFile, log_file),

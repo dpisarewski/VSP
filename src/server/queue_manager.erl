@@ -1,59 +1,54 @@
 -module(queue_manager).
 -compile([debug_info, export_all]).
 
-manager([HBQ, DQ]) ->
-  receive
-    {push, Message} ->
-      %Hängt Information über die Eingangszeit an die Nachricht
-      NewMessage = append_hbq_timestamp(Message),
-      %Loggt die Nachricht
-      tools:log(server, element(2, NewMessage) ++ "|-dropmessage\n"),
-      %Prüfen, ob die Nachricht noch nicht abgearbeitet wurde und in HBQ einfügen
-      check_order(HBQ, DQ, NewMessage),
-      %Fragt alle Nachrighten aus HBQ ab
-      HBQ ! {getall, self()},
-      receive
-        {messages, Messages} -> check_for_gaps(lists:sort(Messages), [HBQ, DQ])
-      end,
-      manager([HBQ, DQ])
-  end
+push(HBQ, DQ, Message) ->
+  %Hängt Information über die Eingangszeit an die Nachricht
+  NewMessage = append_hbq_timestamp(Message),
+  %Loggt die Nachricht
+  tools:log(server, element(2, NewMessage) ++ "|-dropmessage\n"),
+  %Prüfen, ob die Nachricht noch nicht abgearbeitet wurde und in HBQ einfügen
+  NewHBQ = lists:sort(check_order(HBQ, DQ, NewMessage)),
+  %Fragt alle Nachrighten aus HBQ ab
+  NewDQ = check_for_gaps(NewHBQ, DQ),
+  transfer_messages(NewHBQ, NewDQ)
 .
 
 %Fügt die empfangene Nachricht in die HBQ ein, wenn sie kleinere Nummer als die größte Nummer in DQ hat
 check_order(HBQ, DQ, Message) ->
   LastDQ    = get_last_dq(DQ),
   if LastDQ < element(1, Message) ->
-    %Fügt die neue Nachricht in die HBQ ein
-    HBQ ! {push, Message};
-    true -> false
+      %Fügt die neue Nachricht in die HBQ ein
+      lists:append(HBQ, [Message]);
+    true -> HBQ
   end
 .
 
 %Prüft, ob die HBQ voll ist, ob es eine Lücke gibt, und trägt Nachrichten aus HBQ in die DQ über
-check_for_gaps(Messages, [HBQ, DQ]) ->
+check_for_gaps(HBQ, DQ) ->
   DQLimit = tools:get_config_value(server, dlq_limit),
-  if length(Messages) >= (DQLimit / 2) ->
-      fill_gap(Messages, DQ);
-    true -> false
-  end,
-  if Messages =/= [] ->
-      transfer_messages(Messages, HBQ, DQ);
-    true -> false
+  if length(HBQ) >= (DQLimit / 2) ->
+      fill_gap(HBQ, DQ);
+    true ->
+      DQ
   end
 .
 
 %Trägt Nachrichten bis zur nächsten Lücke aus HBQ in die DQ
-transfer_messages(Messages, HBQ, DQ) ->
-  LastDQ      = get_last_dq(DQ),
-  FirstHBQ    = element(1, hd(Messages)),
-  LastNumber  = find_next_gap(Messages),
-  if FirstHBQ == LastDQ + 1 ->
-      NewMessages = [append_dq_timestamp(Message) || Message <- Messages, element(1, Message) =< LastNumber],
-      DQ  ! {shift, length(NewMessages), tools:get_config_value(server, dlq_limit)},
-      DQ  ! {append, NewMessages},
-      HBQ ! {replace, [Message || Message <- Messages, element(1, Message) > LastNumber]};
-    true -> false
-  end
+transfer_messages(HBQ, DQ) ->
+  if HBQ =/=[]->
+    LastDQ      = get_last_dq(DQ),
+    FirstHBQ    = element(1, hd(HBQ)),
+    LastNumber  = find_next_gap(HBQ),
+    if FirstHBQ == LastDQ + 1 ->
+        NewMessages = [append_dq_timestamp(Message) || Message <- HBQ, element(1, Message) =< LastNumber],
+        DQLimit =  tools:get_config_value(server, dlq_limit),
+        NewDQ = lists:append(queue_helper:shift(DQ, length(NewMessages), DQLimit), NewMessages),
+        NewHBQ = [Message || Message <- HBQ, element(1, Message) > LastNumber],
+        [NewHBQ, NewDQ];
+      true -> [HBQ, DQ]
+    end;
+  true->  [HBQ, DQ]
+end
 .
 
 %Hängt Information über Verfügbarkeit einer Nachricht in der DQ an diese Nachricht
@@ -80,21 +75,17 @@ fill_gap(Messages, DQ) ->
   %Prüft, ob eine Lücke existiert, und füllt sie mit einer Fehlernachricht
   if FirstHBQ > LastDQ + 1 ->
       ErrorMessage  = make_error_message(LastDQ + 1, FirstHBQ - 1),
-      DQ  ! {shift, 1, tools:get_config_value(server, dlq_limit)},
-      DQ  ! {push, ErrorMessage};
-    true -> false
+      DQLimit = tools:get_config_value(server, dlq_limit),
+      lists:append(queue_helper:shift(DQ, 1, DQLimit), [ErrorMessage]);
+    true -> DQ
   end
 .
 
 get_last_dq(DQ) ->
-  DQ ! {last, self()},
-  receive
-    {last, Last} ->
-      if Last == none ->
-          0;
-        true ->
-          element(1, Last)
-      end
+  if DQ == [] ->
+      0;
+    true ->
+      element(1, lists:last(DQ))
   end
 .
 
