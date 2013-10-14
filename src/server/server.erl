@@ -8,7 +8,7 @@ start() ->
     tools:reregister(client_manager, ClientManager),
     %Löscht alte vorhadene Logdatei
     file:delete(tools:get_config_value(server, log_file)),
-    tools:log(server, "Server Startzeit: " ++ werkzeug:timeMilliSecond() ++ "| mit PID " ++ werkzeug:to_String(self()) ++ "\n"),
+    tools:log(server, lists:concat(["Server Startzeit: ", werkzeug:timeMilliSecond(), "| mit PID ", werkzeug:to_String(self()), "\n"])),
 
     loop([], [], ClientManager, 1, no_timer)
   end),
@@ -25,7 +25,7 @@ loop(HBQ, DQ, ClientManager, N, Timer) ->
   receive
     %Abfragen der eindeutigen Nachrichtennummer
     {getmsgid, Pid} ->
-      tools:log(server, "Server: Nachrichtennummer " ++ werkzeug:to_String(N) ++ " an " ++ werkzeug:to_String(Pid) ++ " gesendet\n"),
+      tools:log(server, lists:concat(["Server: Nachrichtennummer ", werkzeug:to_String(N), " an ", werkzeug:to_String(Pid), " gesendet\n"])),
       Pid ! {nnr, N},
       loop(HBQ, DQ, ClientManager, N + 1, NewTimer);
 

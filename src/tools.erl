@@ -27,7 +27,7 @@ reregister(Name, Pid) ->
   if
     OldPid =/= undefined ->
       exit(OldPid, kill),
-      stdout("Killed process " ++ werkzeug:to_String(Name) ++ " Pid: " ++ werkzeug:to_String(OldPid) ++ "~n");
+      stdout(lists:concat(["Killed process ", werkzeug:to_String(Name), " Pid: ", werkzeug:to_String(OldPid), "~n"]));
     true ->
       false
   end,

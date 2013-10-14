@@ -11,14 +11,15 @@ deliver_messages(DQ, ClientManager, Pid) ->
 
 %Sendet eine Nachricht mit angegebener Nachrichtennummer an den Client
 send_message(Pid, [], _) ->
-  Text = "Dummy message. ", Number = 0,
-  tools:log(server, Text ++ "|.(" ++ werkzeug:to_String(Number) ++ ")-getmessages von " ++ werkzeug:to_String(Pid) ++ "-" ++ werkzeug:to_String(true) ++ "\n"),
+  Text = "Dummy message. ",
+  Number = 0,
+  tools:log(server, lists:concat([Text, "|.(", werkzeug:to_String(Number), ")-getmessages von ", werkzeug:to_String(Pid), "-", werkzeug:to_String(true), "\n"])),
   Pid ! {reply, Number, Text, true}
 ;
 send_message(Pid, DQ, Number) ->
   MessagesAfter     = [Message || Message <- DQ, element(1, Message) > Number],
   [{Number, Text}]  = [Message || Message <- DQ, element(1, Message) == Number],
-  tools:log(server, Text ++ "|.(" ++ werkzeug:to_String(Number) ++ ")-getmessages von " ++ werkzeug:to_String(Pid) ++ "-" ++ werkzeug:to_String(MessagesAfter == []) ++ "\n"),
+  tools:log(server, lists:concat([Text, "|.(", werkzeug:to_String(Number), ")-getmessages von ", werkzeug:to_String(Pid), "-", werkzeug:to_String(MessagesAfter == [])]) ++ "\n"),
 	Pid ! {reply, Number, Text, MessagesAfter == []}
 .
 
@@ -64,7 +65,7 @@ compute_new_number({ClientPid, Number, Timestamp}, Messages) ->
   Expired = timer:now_diff(now(), Timestamp) / 1000 > timer:seconds(tools:get_config_value(server, clientlifetime)),
   if
     Expired ->
-      tools:log(server, "Client " ++ werkzeug:to_String(ClientPid) ++ " wird vergessen! *************\n"),
+      tools:log(server, lists:concat(["Client ", werkzeug:to_String(ClientPid), " wird vergessen! *************\n"])),
       first_message_number(Messages);
     true ->
       next_message_number(Messages, Number)

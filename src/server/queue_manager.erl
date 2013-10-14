@@ -5,7 +5,7 @@ push(HBQ, DQ, Message) ->
   %Hängt Information über die Eingangszeit an die Nachricht
   NewMessage = append_hbq_timestamp(Message),
   %Loggt die Nachricht
-  tools:log(server, element(2, NewMessage) ++ "|-dropmessage\n"),
+  tools:log(server, lists:concat([element(2, NewMessage), "|-dropmessage\n"])),
   %Prüfen, ob die Nachricht noch nicht abgearbeitet wurde und in HBQ einfügen
   NewHBQ = lists:sort(check_order(HBQ, DQ, NewMessage)),
   %Fragt alle Nachrighten aus HBQ ab
@@ -49,7 +49,7 @@ transfer_messages(HBQ, DQ) ->
         %Hängt Zeitstempel an die Nachrichten, die in die Deliveryqueue zu übertragen sind
         NewMessages = [append_dq_timestamp(Message) || Message <- HBQ, element(1, Message) =< LastNumber],
         %Trägt Nachrichten aus Holdbackqueue in die Deliveryqueue über
-        NewDQ       = lists:append(queue_helper:shift(DQ, length(NewMessages), DQLimit), NewMessages),
+        NewDQ       = lists:append(shift(DQ, length(NewMessages), DQLimit), NewMessages),
         %Löscht die übertragenen Nachrichten
         NewHBQ      = [Message || Message <- HBQ, element(1, Message) > LastNumber],
         [NewHBQ, NewDQ];
@@ -87,7 +87,7 @@ fill_gap(Messages, DQ) ->
       %Lädt die Größe der Deliveryqueue aus der Konfiguration
       DQLimit       = tools:get_config_value(server, dlq_limit),
       %Fügt die Fehlernachricht in die Deliveryqueue
-      lists:append(queue_helper:shift(DQ, 1, DQLimit), [ErrorMessage]);
+      lists:append(shift(DQ, 1, DQLimit), [ErrorMessage]);
     true -> DQ
   end
 .
@@ -116,4 +116,14 @@ find_next_gap(Messages) ->
         true -> Acc
       end
     end, 0, Messages)
+.
+
+%Löscht die erste N Nachrichten
+shift(Queue, N, DQLimit) ->
+  if
+    length(Queue) >= DQLimit ->
+      lists:sublist(Queue, N + 1, DQLimit - N + 1);
+    true ->
+      Queue
+  end
 .
