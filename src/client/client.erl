@@ -4,6 +4,7 @@
 -compile([debug_info, export_all]).
 
 start(ServerNode) ->
+  connect_to_node(ServerNode),
   Clients = tools:get_config_value(client, clients),
   tools:times(Clients, fun(ClientNumber) ->
     start(ServerNode, ClientNumber)
@@ -33,6 +34,17 @@ start(ServerNode, ClientNumber) ->
 
     loop(Server, ClientNumber, LogFile, [], Interval)
   end)
+.
+
+connect_to_node(ServerNode) ->
+  Result = net_adm:ping(ServerNode),
+  if Result == pong ->
+    tools:stdout(lists:concat(["Connected to node: ", ServerNode]));
+    true ->
+      ErrorMessage = lists:concat(["ERROR: Could not connect to node: ", ServerNode]),
+      tools:stdout(ErrorMessage),
+      exit(ErrorMessage)
+  end
 .
 
 loop(Server, ClientNumber, LogFile, MessageNumbers, Interval) ->
