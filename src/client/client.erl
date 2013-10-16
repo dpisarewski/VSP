@@ -39,9 +39,9 @@ start(ServerNode, ClientNumber) ->
 connect_to_node(ServerNode) ->
   Result = net_adm:ping(ServerNode),
   if Result == pong ->
-    tools:stdout(lists:concat(["Connected to node: ", ServerNode]));
-    true ->
-      ErrorMessage = lists:concat(["ERROR: Could not connect to node: ", ServerNode]),
+      tools:stdout(lists:concat(["Connected to node: ", ServerNode, "\n"]));
+    Result == pang ->
+      ErrorMessage = lists:concat(["ERROR: Could not connect to node: ", ServerNode, "\n"]),
       tools:stdout(ErrorMessage),
       exit(ErrorMessage)
   end
