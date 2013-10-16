@@ -62,7 +62,7 @@ end
 %Hängt Information über Verfügbarkeit einer Nachricht in der DQ an diese Nachricht
 append_dq_timestamp(Message) ->
 	{Id, Text} = Message,
-	NewText = Text ++ "| DLQ In:" ++ werkzeug:timeMilliSecond(),
+	NewText = lists:concat([Text, "| DLQ In: ", werkzeug:timeMilliSecond()]),
 	{Id, NewText}
 .
 
