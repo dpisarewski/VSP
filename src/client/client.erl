@@ -4,8 +4,11 @@
 -compile([debug_info, export_all]).
 
 start(ServerNode) ->
+  %Mit dem Servernode verbinden
   connect_to_node(ServerNode),
+  %Anzahl der zu startenden Clients aus der Konfigurationsdatei laden
   Clients = tools:get_config_value(client, clients),
+  %Clients N Mal starten
   tools:times(Clients, fun(ClientNumber) ->
     start(ServerNode, ClientNumber)
   end)
@@ -55,13 +58,13 @@ loop(Server, ClientNumber, LogFile, MessageNumbers, Interval) ->
   %Nachrichten vom Server abrufen
   client_reader:read_messages(Server, LogFile, NewMessageNumbers),
   %Neuen Sendeinterval berechnen
-  NewInterval = calculateInterval(Interval),
+  NewInterval = calculate_interval(Interval),
   tools:stdout(lists:concat(["Interval changed from: ", Interval, " to: ", NewInterval, "\n"])),
 
   loop(Server, ClientNumber, LogFile, NewMessageNumbers, NewInterval)
 .
 
-calculateInterval(Interval) ->
+calculate_interval(Interval) ->
   %Zufallszahl erzeugen. -50% / +50%
   Sign    = round(random:uniform()) * 2 - 1,
   Change  = max(1.0, Interval * 0.5),
