@@ -72,6 +72,6 @@ calculate_interval(Interval) ->
 .
 
 stop(Processes, LogFile) ->
-  werkzeug:logging(LogFile, "Client stopped...\n"),
+  werkzeug:logging(LogFile, "Client stopped\n"),
   [exit(Process, ok) || Process <- Processes]
 .
