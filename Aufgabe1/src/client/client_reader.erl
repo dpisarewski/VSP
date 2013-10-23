@@ -22,7 +22,7 @@ read_messages(Server, LogFile, MessageNumbers) ->
 %Markiert eigene Nachricht mit Sternen
 mark_message(Message, MessageNumbers) ->
   {Number, Text}  = Message,
-  TempMessage     = lists:concat([Text, " C In: " , werkzeug:timeMilliSecond(), "|"]),
+  TempMessage     = lists:concat([werkzeug:to_String(Text), " C In: " , werkzeug:timeMilliSecond(), "|"]),
   IsOwn           = lists:member(Number, MessageNumbers),
   if IsOwn ->
       {Number, lists:concat([TempMessage, "*******;"])};
