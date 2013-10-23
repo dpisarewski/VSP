@@ -26,7 +26,7 @@ loop(HBQ, DQ, ClientManager, N, Timer) ->
     %Abfragen der eindeutigen Nachrichtennummer
     {getmsgid, Pid} ->
       tools:log(server, lists:concat(["Server: Messagenumber ", werkzeug:to_String(N), " sent to  ", werkzeug:to_String(Pid), "\n"])),
-      Pid ! {nnr, N},
+      Pid ! {nid, N},
       loop(HBQ, DQ, ClientManager, N + 1, NewTimer);
 
     %Abfragen aller Nachrichten

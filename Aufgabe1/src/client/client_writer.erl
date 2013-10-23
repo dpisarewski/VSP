@@ -18,6 +18,7 @@ send_messages(Server, ClientNumber, Interval, MessageNumbers, N, LogFile) when N
   timer:sleep(round(Interval * 1000)),
   %Bekommt eine neue Nachrichtennummer
   MessageNumber = get_next_number(Server),
+  werkzeug:logging(LogFile, lists:concat(["Received message number: ", MessageNumber, "\n"])),
   %Generiert eine neue Nachricht
   Message       = generate_message(ClientNumber, MessageNumber),
   %Sendet die neue Nachricht
@@ -33,7 +34,7 @@ send_messages(_, _, _, MessageNumbers, N, _) when N == 0 ->
 get_next_number(Server)->
   Server ! {getmsgid, self()},
   receive
-    {nnr, N} -> N
+    {nid, N} -> N
   end
 .
 
