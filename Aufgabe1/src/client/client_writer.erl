@@ -14,13 +14,13 @@ deliver_messages(Server, ClientNumber, LogFile, MessageNumbers, Interval) ->
 
 %Sendet 5 Message und liefert eine Liste mit Nachrichtennummmern zuruck
 send_messages(Server, ClientNumber, Interval, MessageNumbers, N, LogFile) when N > 0 ->
-  %Wartet *** Sekunden
-  timer:sleep(round(Interval * 1000)),
   %Bekommt eine neue Nachrichtennummer
   MessageNumber = get_next_number(Server),
   werkzeug:logging(LogFile, lists:concat(["Received message number: ", MessageNumber, "\n"])),
   %Generiert eine neue Nachricht
   Message       = generate_message(ClientNumber, MessageNumber),
+  %Wartet *** Sekunden
+  timer:sleep(round(Interval * 1000)),
   %Sendet die neue Nachricht
   send_message(Server, Message),
   werkzeug:logging(LogFile, lists:concat(["Sending message: ", element(2, Message), "\n"])),

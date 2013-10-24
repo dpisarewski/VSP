@@ -7,19 +7,14 @@ push(HBQ, DQ, Message) ->
   %Loggt die Nachricht
   tools:log(server, lists:concat([element(2, NewMessage), "|-dropmessage\n"])),
   %Prüfen, ob die Nachricht noch nicht abgearbeitet wurde und in HBQ einfügen
-  NewHBQ = lists:sort(check_order(HBQ, DQ, NewMessage)),
-  %Fragt alle Nachrighten aus HBQ ab
-  NewDQ = check_for_gaps(NewHBQ, DQ),
-  transfer_messages(NewHBQ, NewDQ)
-.
-
-%Fügt die empfangene Nachricht in die HBQ ein, wenn sie kleinere Nummer als die größte Nummer in DQ hat
-check_order(HBQ, DQ, Message) ->
   LastDQ    = get_last_dq(DQ),
   if LastDQ < element(1, Message) ->
       %Fügt die neue Nachricht in die HBQ ein
-      lists:append(HBQ, [Message]);
-    true -> HBQ
+      NewHBQ  = lists:sort(lists:append(HBQ, [Message])),
+      %Fragt alle Nachrighten aus HBQ ab
+      NewDQ   = check_for_gaps(NewHBQ, DQ),
+      transfer_messages(NewHBQ, NewDQ);
+    true -> [HBQ, DQ]
   end
 .
 
@@ -40,10 +35,10 @@ transfer_messages(HBQ, DQ) ->
     LastDQ      = get_last_dq(DQ),
     %Fragt die erste Nachrichtennummer in HBQ ab
     FirstHBQ    = element(1, hd(HBQ)),
-    %Fragt die letzte Nachrichtennummer in HBQ ab, die vor nächster Lücke steht
-    LastNumber  = find_next_gap(HBQ),
     %Prüft, ob es eine Lücke zwischen DQ und HBQ gibt
     if FirstHBQ == LastDQ + 1 ->
+        %Fragt die letzte Nachrichtennummer in HBQ ab, die vor nächster Lücke steht
+        LastNumber  = find_next_gap(HBQ),
         %Lädt die größe der Delivery Queue aus der Konfiguration
         DQLimit     =  tools:get_config_value(server, dlq_limit),
         %Hängt Zeitstempel an die Nachrichten, die in die Deliveryqueue zu übertragen sind
