@@ -52,8 +52,7 @@ first_message_number(Messages) ->
 
 %Extrahiert Clientinformation aus der Antwort vom Clientmanager oder generiert neue
 extract_info(Response, ClientPid) ->
-  if
-    Response =/= false ->
+  if Response =/= false ->
       Response;
     true ->
       init_client(ClientPid)
@@ -63,8 +62,7 @@ extract_info(Response, ClientPid) ->
 %Prüft, ob die vergangene Zeit seit der letzten Kommunikation einen vorgegebenen Wert überschreitet, und setzt in diesem Fall die Nachrichtennummer zurück
 compute_new_number({ClientPid, Number, Timestamp}, Messages) ->
   Expired = timer:now_diff(now(), Timestamp) / 1000 > timer:seconds(tools:get_config_value(server, clientlifetime)),
-  if
-    Expired ->
+  if Expired ->
       tools:log(server, lists:concat(["Client ", werkzeug:to_String(ClientPid), " wird vergessen! *************\n"])),
       first_message_number(Messages);
     true ->
@@ -75,8 +73,7 @@ compute_new_number({ClientPid, Number, Timestamp}, Messages) ->
 %Bestimmt neue Nachrichtennummer, die an den Client zu senden ist
 next_message_number(Messages, Number) ->
   MessagesAfter = [Message || Message <- Messages, element(1, Message) > Number],
-  if
-    MessagesAfter == [] ->
+  if MessagesAfter == [] ->
       Number;
     true ->
       first_message_number(MessagesAfter)

@@ -115,8 +115,7 @@ find_next_gap(Messages) ->
 
 %Löscht die erste N Nachrichten
 shift(Queue, N, DQLimit) ->
-  if
-    length(Queue) >= DQLimit ->
+  if length(Queue) >= DQLimit ->
       lists:sublist(Queue, N + 1, DQLimit - N + 1);
     true ->
       Queue

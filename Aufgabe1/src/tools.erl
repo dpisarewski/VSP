@@ -24,8 +24,7 @@ return_value_or_false(Tuple) ->
 %Prüft, ob ein Prozess mit angegebenem Namen registriert ist, töten ihn und registriert neuen Prozess mit diesem Namen
 reregister(Name, Pid) ->
   OldPid = whereis(Name),
-  if
-    OldPid =/= undefined ->
+  if OldPid =/= undefined ->
       exit(OldPid, kill),
       stdout(lists:concat(["Killed process ", werkzeug:to_String(Name), " Pid: ", werkzeug:to_String(OldPid), "~n"]));
     true ->
