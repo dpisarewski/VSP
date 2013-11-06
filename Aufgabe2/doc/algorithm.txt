@@ -1,0 +1,11 @@
+Einen Knoten aufwecken.
+Der Knoten wählt die akmg.
+Der Knoten markiert die akmg als branch.
+Der Knoten schickt eine connect Nachricht.
+Der Knoten geht in den Zustand found über.
+Der Knoten nimmt den Namen der akmg an.
+Der empfangende Knoten markiert die akmg als branch.
+Der empfangende Knoten markiert die akmg als core.
+Der empfangende Knoten nimmt den Namen der akmg an.
+Der empfangende Knoten setzt vom Punkt 3. fort.
+
