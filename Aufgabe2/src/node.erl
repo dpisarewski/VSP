@@ -1,0 +1,3 @@
+-module(node).
+-author("Dieter Pisarewski, Maxim Rjabenko").
+-compile(export_all).
