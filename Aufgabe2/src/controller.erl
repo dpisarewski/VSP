@@ -2,19 +2,27 @@
 -author("Dieter Pisarewski, Maxim Rjabenko").
 -compile(export_all).
 
+start(Name) ->
+  start(Name, "node.cfg")
+.
+
 start(Name, Filename) ->
   ping_nodes("hosts"),
   Neighbors = load_neighbors(Filename),
-  Edges = [{element(1, Neighbor), Name, element(2, Neighbor)} || Neighbor <- Neighbors],
+  Edges     = [{element(1, Neighbor), Name, element(2, Neighbor)} || Neighbor <- Neighbors],
   spawn(fun() ->
     register(Name),
-    tools:stdout(Edges)
+    node:start(Name, Edges)
   end)
 .
 
 start_all() ->
-  {ok, ConfigFiles} = file:list_dir("nodes"),
-  [start(re:replace(ConfigFile, "node(\\d)\.cfg", "\\1", [{return, list}]), lists:concat(["nodes/", ConfigFile])) || ConfigFile <- ConfigFiles]
+  {ok, Filenames} = file:list_dir("nodes"),
+  [start(extract_node_name(Filename), lists:concat(["nodes/", Filename])) || Filename <- Filenames]
+.
+
+extract_node_name(Filename) ->
+  re:replace(Filename, "node(\\d)\.cfg", "\\1", [{return, list}])
 .
 
 ping_nodes(Filename) ->
@@ -27,10 +35,6 @@ register(Name) ->
 .
 
 load_neighbors(Filename) ->
-  read_neighbors(Filename)
-.
-
-read_neighbors(Filename) ->
   {ok, ConfigFile} = file:open(Filename, read),
   read_neighbors(ConfigFile, [])
 .
