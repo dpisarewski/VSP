@@ -44,11 +44,8 @@ read_neighbors(ConfigFile, Neighbors) ->
     {ok, Data} ->
       [Weight, Node] = string:tokens(Data, ","),
       Neighbor = {list_to_integer(Weight), string:strip(Node, right, $\n)},
-      read_neighbors(ConfigFile, lists:append(Neighbors, [Neighbor]));
+      read_neighbors(ConfigFile, Neighbors ++ [Neighbor]);
     eof ->
       Neighbors
-      ;
-    {error, _} ->
-      []
   end
 .
