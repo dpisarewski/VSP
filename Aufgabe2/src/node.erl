@@ -5,16 +5,21 @@
 
 start(Name, Edges) ->
   tools:stdout("Node " ++ Name ++ " started"),
-  tools:stdout(Edges)
-.
+  tools:stdout(Edges),
 
-loop(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch)->
+  EdgeStates = dict:new(),
+  [dict:store(Edge,sleeping, EdgeStates)|| Edge <-Edges]
+.
+loop(Name, Level, FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch, EdgeStates)->
   receive
-    {wakeup} ->
-      Edge            = min(sort(Edges)),
-      NeuNodeState    = found,
-      getNext(Edge) ! {connect,Level,Edge},
-      loop(Level,FragName, NeuNodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch);
+    wakeup ->
+      NeuLevel          = 0,
+      NeuFoundCounter   = 0,
+      NeuNodeState      = found,
+      Edge              = lists:min(lists:sort(Edges)),
+      dict:store(Edge,branch, EdgeStates),
+      getNodePid(Edge, Name) ! {connect,Level,Edge},
+      loop(Name, NeuLevel, FragName, NeuNodeState, Edges, BestEdge, WeightBE, NeuFoundCounter, TestEdge, InBranch, EdgeStates);
 
     {initiate,Level,FragName,NodeState,Edge}  ->
       NeuLevel        = Level,
@@ -23,20 +28,22 @@ loop(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdg
       NeuInBranch     = Edge,
       NeuBestEdge     = nil,
       NeuWeightBE     = infinity,
-      IstBranch       = fun(X) -> getState(X) == basic,
-      BasicEdges      = lists:filter(IstBranch,Edges),
-      [getNext(BasicEdge)!{initiate, NeuLevel, NeuFragName, NeuNodeState, Edge} || BasicEdge <- BasicEdges],
-      NeuFoundCounter = length(BasicEdges) + FoundCounter,
-      if (NodeState == find) ->
-        sendTest()   %TODO
+
+      Branches        = [Branch || Branch <- Edges, getEdgeState(Branch, EdgeStates) == branch and Branch =/= Edge],
+      [getNodePid(Branch, Name) ! {initiate, NeuLevel, NeuFragName, NeuNodeState, Branch} || Branch <- Branches],
+      NeuFoundCounter = FoundCounter + length(Branches),
+      if NodeState == find ->
+          test();
+        true ->
+          do_nothing
       end,
-      loop(NeuLevel, NeuFragName, NeuNodeState, Edges, NeuBestEdge, NeuWeightBE, NeuFoundCounter, TestEdge, NeuInBranch);
+      loop(Name, NeuLevel, NeuFragName, NeuNodeState, Edges, NeuBestEdge, NeuWeightBE, NeuFoundCounter, TestEdge, NeuInBranch, EdgeStates);
 
     {test,Level,FragName,Edge} ->
       if (NodeState == sleeping) ->
+
         %TODO sich selber aufwäcken
       end,
-
       loop();
 
     {accept,Edge}  ->
@@ -44,10 +51,11 @@ loop(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdg
       if(getWeigt(Edge) < BestEdge) ->
         NeuBestEdge   = Edge,
         NeuWeightBE   = getWeigt(Edge),
-        sendReport(Level,FragName, NodeState, Edges, NeuBestEdge, NeuWeightBE, FoundCounter, NeuTestEdge, InBranch, Edge);
       true ->
-        sendReport(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, NeuTestEdge, InBranch, Edge)
-      end;
+        NeuBestEdge   = BestEdge,
+        NeuWeightBE   = WeightBE,
+      end,
+      sendReport(Level,FragName, NodeState, Edges, NeuBestEdge, NeuWeightBE, FoundCounter, NeuTestEdge, InBranch, Edge);
 
     {reject,Edge} ->
       if (getState(Edge) == basic) ->
@@ -57,27 +65,20 @@ loop(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdg
       loop();
 
     {report,Weight,Edge}  ->
-      if (Edge =:= InBranch) ->
-        NeuFoundCounter = FoundCounter - 1,
-        if (Weight < WeightBE) ->
-          NeuBestEdge   = Edge,
-          NeuWeight     = Weight
-        end,
-        sendReport(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch, Edge);
-      try ->
-        if(NodeState == find)->
-          %TODO place received message on end of queue
-          ;
-        try ->
-          if(Weight > WeightBE) ->
-            %TODO execute procedure change-root
-            ;
-          try ->
-            if(Weight == WeightBE) ->
-              %TODO halt
-            end
-          end
-        end
+      if Edge =:= InBranch ->
+          NeuFoundCounter = FoundCounter - 1,
+          case Weight < WeightBE of
+            true ->
+              NeuBestEdge   = Edge,
+              NeuWeight     = Weight;
+          end,
+          sendReport(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch, Edge);
+        NodeState == find ->
+          self() ! {report, Weight, Edge};
+        Weight > WeightBE ->
+          changeroot();
+        Weight == WeightBE == infinity ->
+          exit()
       end,
       loop();
 
@@ -91,11 +92,23 @@ loop(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdg
          NeuBestEdge    = setState(BestEdge, branch);
          NeuEdges       = [NeuBestEdge ,delete(BestEdge)], %neu List von Edges, mit BestEdge als Branch markiert
        end,
-      loop(Level,FragName, NodeState, NeuEdges, NeuBestEdge, WeightBE, FoundCounter, TestEdge, InBranch);
+      loop(Name, Level,FragName, NodeState, NeuEdges, NeuBestEdge, WeightBE, FoundCounter, TestEdge, InBranch, EdgeStates);
 
-    {connect,Level,Edge} ->
+    {connect, ReceivedLevel, Edge} ->
       if (NodeState == sleeping) ->
-      %TODO sich selber aufwäcken
+          self()! wakeup;
+        true ->
+          do_nothing
+      end,
+      if ReceivedLevel < Level ->
+          dict:store(Edge, branch, EdgeStates),
+          getNodePid(Edge, Name) ! {initiate, Level, FragName, NodeState, Edge},
+          if NodeState == find ->
+              NeuFoundCounter = FoundCounter + 1;
+            true ->
+              do_nothing
+          end,
+          getEdgeState(Edge, EdgeStates)
 
       loop()
   end
@@ -104,15 +117,33 @@ loop(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdg
 
 
 %liefert zurück die Knote von andere Seite von Edge
-getNext(Edge) ->
- %TODO
+getNodePid(Edge, Name) ->
+  Source = element(2, Edge),
+  if Source == Name ->
+      Node = element(3, Edge);
+    true ->
+      Node = Source
+  end,
+  global:whereis_name(Node)
 .
 
-sendReport(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch, Edge)->
+report(Level, FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch, Edge, EdgeStates) ->
   if (FoundCounter == 0 and TestEdge == nil) ->
-    NeuNodeState = found;
-    InBranch ! {report, WeightBE, Edge},
-    loop(Level,FragName, NeuNodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch)
-  end,
-  loop(Level,FragName, NodeState, Edges, BestEdge, WeightBE, FoundCounter, TestEdge, InBranch)
+      NeuNodeState = found,
+      InBranch ! {report, WeightBE, Edge};
+    true ->
+      NeuNodeState = NodeState
+  end
+.
+
+changeroot(Level, BestEdge) ->
+  stub
+.
+
+getEdgeState(Edge, EdgeStates) ->
+  dict:fetch(Edge, EdgeStates)
+.
+
+test() ->
+  stub
 .
