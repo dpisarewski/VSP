@@ -7,12 +7,17 @@ start(Name) ->
 .
 
 start(Name, Filename) ->
+  LogFile     = lists:concat(["log/", "node_", Name, ".log"]),
+  %Löschen, falls die Datei schon vorhanden ist
+  file:delete(LogFile),
+
   ping_nodes("hosts"),
   Neighbors = load_neighbors(Filename),
   Edges     = [{element(1, Neighbor), Name, element(2, Neighbor)} || Neighbor <- Neighbors],
+  werkzeug:logging(LogFile, "Edges loaded: " ++ werkzeug:to_String(Edges)),
   spawn(fun() ->
     register(Name),
-    node:start(Name, Edges)
+    node:start(LogFile, Name, Edges)
   end)
 .
 
@@ -42,9 +47,13 @@ load_neighbors(Filename) ->
 read_neighbors(ConfigFile, Neighbors) ->
   case file:read_line(ConfigFile) of
     {ok, Data} ->
-      [Weight, Node] = string:tokens(Data, ","),
-      Neighbor = {list_to_integer(Weight), string:strip(Node, right, $\n)},
-      read_neighbors(ConfigFile, Neighbors ++ [Neighbor]);
+      case string:tokens(Data, ",") of
+        [Weight, Node] ->
+          Neighbor = {list_to_integer(Weight), string:strip(Node, right, $\n)},
+          read_neighbors(ConfigFile, Neighbors ++ [Neighbor]);
+        [] ->
+          Neighbors
+      end;
     eof ->
       Neighbors
   end
