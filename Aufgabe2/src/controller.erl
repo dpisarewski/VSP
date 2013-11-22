@@ -1,6 +1,7 @@
 -module(controller).
 -author("Dieter Pisarewski, Maxim Rjabenko").
 -compile(export_all).
+-include("data.hrl").
 
 start(Name) ->
   start(Name, "node.cfg")
@@ -23,8 +24,26 @@ start(Name, Filename) ->
 .
 
 start_all() ->
+  register(controller, self()),
   {ok, Filenames} = file:list_dir("nodes"),
-  [start(extract_node_name(Filename), lists:concat(["nodes/", Filename])) || Filename <- Filenames]
+  [start(extract_node_name(Filename), lists:concat(["nodes/", Filename])) || Filename <- Filenames],
+  receive
+    halt -> halt
+  end,
+  [global:whereis_name(extract_node_name(Filename)) ! {get_data, self()} || Filename <- Filenames],
+  Branches = collect_data(dict:new(), length(Filenames)),
+  werkzeug:logging("log/all_nodes.log", werkzeug:to_String(Branches) ++ "\n")
+.
+
+collect_data(Branches, N) when N > 0 ->
+  receive
+    {data, Data} ->
+      collect_data(dict:store(element(1, Data#data.in_branch), Data#data.in_branch, Branches), N - 1)
+  end
+;
+collect_data(Branches, N) when N == 0 ->
+  Fun = fun(_, Edge, Edges) -> lists:append(Edges, [Edge]) end,
+  dict:fold(Fun, [], Branches)
 .
 
 extract_node_name(Filename) ->
