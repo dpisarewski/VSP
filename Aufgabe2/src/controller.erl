@@ -10,11 +10,12 @@ start(Name, Filename) ->
   LogFile     = lists:concat(["log/", "node_", Name, ".log"]),
   %Löschen, falls die Datei schon vorhanden ist
   file:delete(LogFile),
+  file:delete("log/all_nodes.log"),
 
   ping_nodes("hosts"),
   Neighbors = load_neighbors(Filename),
   Edges     = [{element(1, Neighbor), Name, element(2, Neighbor)} || Neighbor <- Neighbors],
-  werkzeug:logging(LogFile, "Edges loaded: " ++ werkzeug:to_String(Edges)),
+  werkzeug:logging(LogFile, "Edges loaded: " ++ werkzeug:to_String(Edges) ++ "~n"),
   spawn(fun() ->
     register(Name),
     node:start(LogFile, Name, Edges)

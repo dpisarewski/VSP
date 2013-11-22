@@ -29,13 +29,15 @@ start(LogFile, Name, Edges) ->
 .
 
 loop(Data) ->
+  timer:sleep(1000),
   receive
     wakeup ->
-      werkzeug:logging(Data#data.log_file, "received wakeup"),
+      log(Data, lists:concat([Data#data.name, ": wakeup"])),
       loop(wakeup(Data));
 
-    {initiate, ReceivedLevel, ReceivedFragName, ReceivedNodeState, Edge}  ->
-      werkzeug:logging(Data#data.log_file, ""),
+    {initiate, ReceivedLevel, ReceivedFragName, ReceivedNodeState, ReceivedEdge}  ->
+      log(Data, lists:concat([Data#data.name, ": {initiate, ", ReceivedLevel, ", ", ReceivedFragName, ", ", ReceivedNodeState, ", ", werkzeug:to_String(ReceivedEdge), "}"])),
+      Edge        = convert_edge(ReceivedEdge, Data),
       NewData     = init_fragment(Data, ReceivedLevel, ReceivedFragName, ReceivedNodeState, Edge),
       ChangedData = broadcast_initiate(NewData, Edge),
       if ChangedData#data.node_state == find ->
@@ -45,14 +47,16 @@ loop(Data) ->
       end,
       loop(UpdatedData);
 
-    {test, ReceivedLevel, ReceivedFragName, Edge} ->
-      werkzeug:logging(Data#data.log_file, lists:concat(["received: {test, ", ReceivedLevel, ", ", ReceivedFragName, ", ", werkzeug:to_String(Edge), "}"])),
+    {test, ReceivedLevel, ReceivedFragName, ReceivedEdge} ->
       NewData = check_state(Data),
+      log(NewData, lists:concat([NewData#data.name, ": {test, ", ReceivedLevel, ", ", ReceivedFragName, ", ", werkzeug:to_String(ReceivedEdge), "}"])),
+      Edge    = convert_edge(ReceivedEdge, Data),
       loop(accept_or_reject_edge(NewData, ReceivedLevel, ReceivedFragName, Edge));
 
-    {accept, Edge}  ->
-      werkzeug:logging(Data#data.log_file, lists:concat(["received: {accept, ", werkzeug:to_String(Edge), "}"])),
-      Weight = getWeigt(Edge),
+    {accept, ReceivedEdge}  ->
+      log(Data, lists:concat([Data#data.name, ": {accept, ", werkzeug:to_String(ReceivedEdge), "}"])),
+      Edge    = convert_edge(ReceivedEdge, Data),
+      Weight  = getWeigt(Edge),
       if Weight < Data#data.best_edge ->
         BestEdge    = Edge,
         WeightBE    = getWeigt(Edge);
@@ -67,8 +71,9 @@ loop(Data) ->
       },
       loop(report(NewData));
 
-    {reject, Edge} ->
-      werkzeug:logging(Data#data.log_file, lists:concat(["received: {reject, ", werkzeug:to_String(Edge), "}"])),
+    {reject, ReceivedEdge} ->
+      log(Data, lists:concat([Data#data.name, ": {reject, ", werkzeug:to_String(ReceivedEdge), "}"])),
+      Edge      = convert_edge(ReceivedEdge, Data),
       EdgeState = getEdgeState(Edge, Data),
       if EdgeState == basic ->
           NewData = Data#data{edge_states = setEdgeState(Edge, Data, rejected)};
@@ -77,8 +82,9 @@ loop(Data) ->
       end,
       loop(test(NewData));
 
-    {report, Weight, Edge}  ->
-      werkzeug:logging(Data#data.log_file, lists:concat(["received: {report, ", Weight, ", ", werkzeug:to_String(Edge), "}"])),
+    {report, Weight, ReceivedEdge}  ->
+      log(Data, lists:concat([Data#data.name, ": {report, ", Weight, ", ", werkzeug:to_String(ReceivedEdge), "}"])),
+      Edge = convert_edge(ReceivedEdge, Data),
       if Edge /= Data#data.in_branch ->
           NewData = convergecast_report(Data, Weight, Edge);
         Data#data.node_state == find ->
@@ -88,18 +94,21 @@ loop(Data) ->
           NewData = changeroot(Data);
         (Weight == Data#data.best_weight) and (Weight == infinity) ->
           NewData = Data,
-          exit(halt)
+          log(Data, lists:concat([Data#data.name, ": stopping execution"])),
+          exit(halt);
+        true ->
+          NewData = Data
       end,
       loop(NewData);
 
-    {changeroot, Edge} ->
-      werkzeug:logging(Data#data.log_file, lists:concat(["received: {changeroot, ", werkzeug:to_String(Edge), "}"])),
-      werkzeug:logging(Data#data.log_file, ""),
+    {changeroot,ReceivedEdge} ->
+      log(Data, lists:concat([Data#data.name, ": {changeroot, ", werkzeug:to_String(ReceivedEdge), "}"])),
       loop(changeroot(Data));
 
-    {connect, ReceivedLevel, Edge} ->
-      werkzeug:logging(Data#data.log_file, lists:concat(["received: {connect, ", ReceivedLevel, ", ", werkzeug:to_String(Edge), "}"])),
+    {connect, ReceivedLevel, ReceivedEdge} ->
       NewData   = check_state(Data),
+      log(NewData, lists:concat([NewData#data.name, ": {connect, ", ReceivedLevel, ", ", werkzeug:to_String(ReceivedEdge), "}"])),
+      Edge      = convert_edge(ReceivedEdge, Data),
       EdgeState = getEdgeState(Edge, NewData),
       if ReceivedLevel < NewData#data.level ->
           ChangedData = absorb_fragment(NewData, Edge);
@@ -107,7 +116,7 @@ loop(Data) ->
           self() ! {connect, ReceivedLevel, Edge},
           ChangedData = NewData;
         true ->
-          getNodePid(Edge, NewData) ! {initiate, NewData#data.level + 1, NewData#data.name, find, Edge},
+          getNodePid(Edge, NewData) ! {initiate, NewData#data.level + 1, werkzeug:to_String(getWeigt(Edge)), find, Edge},
           ChangedData = NewData
       end,
       loop(ChangedData)
@@ -131,6 +140,7 @@ wakeup(Data) ->
     edge_states = setEdgeState(Edge, Data, branch)
   },
   getNodePid(Edge, NewData) ! {connect, NewData#data.level, Edge},
+  log(NewData, lists:concat([NewData#data.name, "->", neighbor(Edge, NewData), ": {connect, ", NewData#data.level, ", ", werkzeug:to_String(Edge), "}"])),
   NewData
 .
 
@@ -138,7 +148,8 @@ test(Data) ->
   BasicEdges = [Edge || Edge <- Data#data.edges, getEdgeState(Edge, Data) == basic],
   if length(BasicEdges) /= 0 ->
       NewData     = Data#data{test_edge = lists:min(BasicEdges)},
-      getNodePid(NewData#data.test_edge, Data) ! {test, Data#data.level, Data#data.name, NewData#data.test_edge};
+      getNodePid(NewData#data.test_edge, NewData) ! {test, NewData#data.level, NewData#data.frag_name, NewData#data.test_edge},
+      log(NewData, lists:concat([NewData#data.name, "->", neighbor(NewData#data.test_edge, NewData), ": {test, ", NewData#data.level, ", ", NewData#data.frag_name, ", ", werkzeug:to_String(NewData#data.test_edge), "}"]));
     true ->
       NewData     =  report(Data#data{test_edge = nil})
      end,
@@ -149,7 +160,8 @@ test(Data) ->
 report(Data) ->
   if (Data#data.found_count == 0) and (Data#data.test_edge == nil) ->
       NewData = Data#data{node_state = found},
-      getNodePid(NewData#data.in_branch, NewData) ! {report, NewData#data.best_weight, NewData#data.in_branch};
+      getNodePid(NewData#data.in_branch, NewData) ! {report, NewData#data.best_weight, NewData#data.in_branch},
+      log(NewData, lists:concat([NewData#data.name, "->", neighbor(NewData#data.in_branch, NewData), ": {report, ", NewData#data.best_weight, ", ", werkzeug:to_String(NewData#data.in_branch), "}"]));
     true ->
       NewData = Data
   end,
@@ -160,9 +172,11 @@ changeroot(Data) ->
   EdgeState = getEdgeState(Data#data.best_edge, Data),
   if EdgeState == branch->
       getNodePid(Data#data.best_edge, Data) ! {changeroot, Data#data.best_edge},
+      log(Data, lists:concat([Data#data.name, "->", neighbor(Data#data.best_edge, Data), ": {changeroot, ", werkzeug:to_String(Data#data.best_edge), "}"])),
       NewData = Data;
     true ->
       getNodePid(Data#data.best_edge, Data) ! {connect, Data#data.level, Data#data.best_edge},
+      log(Data, lists:concat([Data#data.name, "->", neighbor(Data#data.best_edge, Data), ": {connect, ", Data#data.level, ", ", werkzeug:to_String(Data#data.best_edge), "}"])),
       NewData = Data#data{edge_states = setEdgeState(Data#data.best_edge, Data, branch)}
   end,
   NewData
@@ -203,12 +217,13 @@ initEdgeStates(Edges) ->
 rejectEdge(Edge, Data) ->
   EdgeState = getEdgeState(Edge, Data),
   if EdgeState == basic ->
-      NewData = setEdgeState(Edge, Data, rejected);
+      NewData = Data#data{edge_states = setEdgeState(Edge, Data, rejected)};
     true ->
       NewData = Data
   end,
   if NewData#data.test_edge /= Edge ->
       getNodePid(Edge, NewData) ! {reject, Edge},
+      log(NewData, lists:concat([NewData#data.name, "->", neighbor(Edge, NewData), ": {reject, ", werkzeug:to_String(Edge), "}"])),
       ChangedData = NewData;
     true ->
       ChangedData = test(NewData)
@@ -222,6 +237,7 @@ accept_or_reject_edge(Data, ReceivedLevel, ReceivedFragName, Edge) ->
       NewData = Data;
     Data#data.frag_name /= ReceivedFragName ->
       getNodePid(Edge, Data) ! {accept, Edge},
+      log(Data, lists:concat([Data#data.name, "->", neighbor(Edge, Data), ": {accept, ", werkzeug:to_String(Edge), "}"])),
       NewData = Data;
     true ->
       NewData = rejectEdge(Edge, Data)
@@ -231,8 +247,13 @@ accept_or_reject_edge(Data, ReceivedLevel, ReceivedFragName, Edge) ->
 
 broadcast_initiate(Data, Edge) ->
   Branches        = [Branch || Branch <- Data#data.edges, (getEdgeState(Branch, Data) == branch) and (Branch /= Edge)],
-  [getNodePid(Branch, Data) ! {initiate, Data#data.level, Data#data.frag_name, Data#data.node_state, Branch} || Branch <- Branches],
+  [send_initiate(Branch, Data) || Branch <- Branches],
   Data#data{found_count = Data#data.found_count + length(Branches)}
+.
+
+send_initiate(Edge, Data) ->
+  getNodePid(Edge, Data) ! {initiate, Data#data.level, Data#data.frag_name, Data#data.node_state, Edge},
+  log(Data, lists:concat([Data#data.name, "->", neighbor(Edge, Data), ": {initiate, ", Data#data.level, ", ", Data#data.frag_name, ", ", Data#data.node_state, ", ", werkzeug:to_String(Edge), "}"]))
 .
 
 init_fragment(Data, ReceivedLevel, ReceivedFragName, ReceivedNodeState, Edge) ->
@@ -264,7 +285,7 @@ convergecast_report(Data, Weight, Edge) ->
 
 absorb_fragment(Data, Edge) ->
   NewEdgeStates = setEdgeState(Edge, Data, branch),
-  getNodePid(Edge, Data) ! {initiate, Data#data.level, Data#data.frag_name, Data#data.node_state, Edge},
+  send_initiate(Edge, Data),
   if Data#data.node_state == find ->
       NewFoundCounter = Data#data.found_count + 1;
     true ->
@@ -274,4 +295,13 @@ absorb_fragment(Data, Edge) ->
     edge_states = NewEdgeStates,
     found_count = NewFoundCounter
   }
+.
+
+convert_edge(Edge, Data) ->
+  {element(1, Edge), Data#data.name, neighbor(Edge, Data)}
+.
+
+log(Data, Message) ->
+  werkzeug:logging("log/all_nodes.log", Message ++ "\n"),
+  werkzeug:logging(Data#data.log_file, Message ++ "\n")
 .
