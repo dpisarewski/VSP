@@ -104,6 +104,10 @@ loop(Data) ->
 
     {get_data, Pid} ->
       Pid ! {data, Data},
+      loop(Data);
+
+    Any ->
+      log(Data, "WARNING: received unknown message" ++ werkzeug:to_String(Any)),
       loop(Data)
   end
 .

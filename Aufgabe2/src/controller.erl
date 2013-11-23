@@ -4,6 +4,7 @@
 -include("data.hrl").
 
 start(Name) ->
+  ping_nodes("hosts"),
   start(Name, "node.cfg")
 .
 
@@ -13,7 +14,6 @@ start(Name, Filename) ->
   file:delete(LogFile),
   file:delete("log/all_nodes.log"),
 
-  ping_nodes("hosts"),
   Neighbors = load_neighbors(Filename),
   Edges     = [{element(1, Neighbor), Name, element(2, Neighbor)} || Neighbor <- Neighbors],
   werkzeug:logging(LogFile, "Edges loaded: " ++ werkzeug:to_String(Edges) ++ "~n"),
@@ -26,6 +26,7 @@ start(Name, Filename) ->
 start_all() ->
   register(controller, self()),
   {ok, Filenames} = file:list_dir("nodes"),
+  ping_nodes("hosts"),
   [start(extract_node_name(Filename), lists:concat(["nodes/", Filename])) || Filename <- Filenames],
   receive
     halt -> halt
