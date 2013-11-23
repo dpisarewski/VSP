@@ -9,7 +9,7 @@ start(Name) ->
 .
 
 start(Name, Filename) ->
-  LogFile     = lists:concat(["log/", "node_", Name, ".log"]),
+  LogFile     = lists:concat(["log/", Name, ".log"]),
   %Löschen, falls die Datei schon vorhanden ist
   file:delete(LogFile),
   file:delete("log/all_nodes.log"),
@@ -17,6 +17,7 @@ start(Name, Filename) ->
   Neighbors = load_neighbors(Filename),
   Edges     = [{element(1, Neighbor), Name, element(2, Neighbor)} || Neighbor <- Neighbors],
   werkzeug:logging(LogFile, "Edges loaded: " ++ werkzeug:to_String(Edges) ++ "~n"),
+
   spawn(fun() ->
     register(Name),
     node:start(LogFile, Name, Edges)
@@ -25,14 +26,15 @@ start(Name, Filename) ->
 
 start_all() ->
   register(controller, self()),
-  {ok, Filenames} = file:list_dir("nodes"),
   ping_nodes("hosts"),
-  [start(extract_node_name(Filename), lists:concat(["nodes/", Filename])) || Filename <- Filenames],
-  receive
-    halt -> halt
-  end,
-  [global:whereis_name(extract_node_name(Filename)) ! {get_data, self()} || Filename <- Filenames],
-  Branches = collect_data(dict:new(), length(Filenames)),
+  {ok, Filenames} = file:list_dir("nodes"),
+  Nodenames       = [extract_node_name(Filename) || Filename <- Filenames],
+
+  [start(Nodename, lists:concat(["nodes/", Nodename, ".cfg"])) || Nodename <- Nodenames],
+  receive halt -> halt end,
+  [global:whereis_name(Nodename) ! {get_data, self()} || Nodename <- Nodenames],
+
+  Branches = collect_data(dict:new(), length(Nodenames)),
   werkzeug:logging("log/all_nodes.log", werkzeug:to_String(Branches) ++ "\n")
 .
 
@@ -48,7 +50,7 @@ collect_data(Branches, N) when N == 0 ->
 .
 
 extract_node_name(Filename) ->
-  re:replace(Filename, "node(\\d)\.cfg", "\\1", [{return, list}])
+  re:replace(Filename, "(\\d)\.cfg", "\\1", [{return, list}])
 .
 
 ping_nodes(Filename) ->

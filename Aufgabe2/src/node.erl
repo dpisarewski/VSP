@@ -4,7 +4,6 @@
 -include("data.hrl").
 
 start(LogFile, Name, Edges) ->
-  tools:stdout("Node " ++ Name ++ " started"),
   EdgeStates  = initEdgeStates(Edges),
   Data = #data{
     name        = Name,
@@ -12,6 +11,7 @@ start(LogFile, Name, Edges) ->
     edge_states = EdgeStates,
     log_file    = LogFile
   },
+  log(Data, "Node " ++ Name ++ " started"),
   loop(Data)
 .
 
@@ -75,7 +75,7 @@ loop(Data) ->
           NewData = changeroot(Data);
         (Weight == Data#data.best_weight) and (Weight == infinity) ->
           NewData = Data,
-          tools:stdout("Node " ++ Data#data.name ++ " stopped\n"),
+          log(Data, "Node " ++ Data#data.name ++ " stopped"),
           whereis(controller) ! halt,
           loop(NewData);
         true ->
@@ -107,7 +107,7 @@ loop(Data) ->
       loop(Data);
 
     Any ->
-      log(Data, "WARNING: received unknown message" ++ werkzeug:to_String(Any)),
+      log(Data, "WARNING: received unknown message: " ++ werkzeug:to_String(Any)),
       loop(Data)
   end
 .
