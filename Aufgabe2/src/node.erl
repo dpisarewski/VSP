@@ -3,6 +3,7 @@
 -compile(export_all).
 -include("data.hrl").
 
+% Node starten und die mit Startwerten initialisieren
 start(LogFile, Name, Edges) ->
   EdgeStates  = initEdgeStates(Edges),
   Data = #data{
@@ -15,6 +16,7 @@ start(LogFile, Name, Edges) ->
   loop(Data)
 .
 
+
 loop(Data) ->
   receive
     wakeup ->
@@ -22,10 +24,14 @@ loop(Data) ->
       loop(wakeup(Data));
 
     {initiate, ReceivedLevel, ReceivedFragName, ReceivedNodeState, ReceivedEdge}  ->
+      % Edge aufpassen
       Edge        = convert_edge(ReceivedEdge, Data),
+      % Werte zurücksetzen
       NewData     = init_fragment(Data, ReceivedLevel, ReceivedFragName, ReceivedNodeState, Edge),
+      % andere Fragmentmitglieder informieren, dass ein neuer Fragment sich gebildet hat
       ChangedData = broadcast_initiate(NewData, Edge),
       if ChangedData#data.node_state == find ->
+          % Testprozess starten
           UpdatedData = test(ChangedData);
         true ->
           UpdatedData = ChangedData
@@ -33,47 +39,69 @@ loop(Data) ->
       loop(UpdatedData);
 
     {test, ReceivedLevel, ReceivedFragName, ReceivedEdge} ->
+      % aufwecken, wenn schläft
       NewData = check_state(Data),
+      % Edge aufpassen
       Edge    = convert_edge(ReceivedEdge, Data),
+      % Nachrichtempfänger informiert den Nachrichtsender, ob er zu daselben Fragment gehört,
+      % oder zu einem anderen Fragment mit grosserem Level, oder bleibt still
       loop(accept_or_reject_edge(NewData, ReceivedLevel, ReceivedFragName, Edge));
 
     {accept, ReceivedEdge}  ->
+      % Edge aufpassen
       Edge    = convert_edge(ReceivedEdge, Data),
       Weight  = getWeigt(Edge),
-      if Weight < Data#data.best_edge ->
+      % Vergleichen das Gewicht der besten ausgehenden Kante mit dem Gewicht der empfangenen Kante
+      if Weight < Data#data.best_weight ->
+        % beste Kante bekommt neue Wert
         BestEdge    = Edge,
         WeightBE    = getWeigt(Edge);
       true ->
         BestEdge    = Data#data.best_edge,
-        WeightBE    = Data#data.best_edge
+        WeightBE    = Data#data.best_weight
       end,
+      % Die Knotendaten mit die neuen Werten aktualisieren
       NewData       = Data#data{
         test_edge   = nil,
         best_edge   = BestEdge,
         best_weight = WeightBE
       },
+      %prozess Report starten
       loop(report(NewData));
 
     {reject, ReceivedEdge} ->
+      % Edge aufpassen
       Edge      = convert_edge(ReceivedEdge, Data),
+      % Kantenzustand abfragen
       EdgeState = getEdgeState(Edge, Data),
+      % falls das Kantenzustand ist basic, dann zu rejected ändern
       if EdgeState == basic ->
           NewData = Data#data{edge_states = setEdgeState(Edge, Data, rejected)};
         true ->
           NewData = Data
       end,
+      % Testprozess starten
       loop(test(NewData));
 
     {report, Weight, ReceivedEdge}  ->
+      % Edge aufpassen
       Edge = convert_edge(ReceivedEdge, Data),
+      % Prüfen, ob die empfangene Kante eine Branchkante ist
       if Edge /= Data#data.in_branch ->
+        % Die Knotendaten mit die neuen Werten aktualisieren
           NewData = convergecast_report(Data, Weight, Edge);
+        % Prüfen, ob die Knote im Zustand find ist
         Data#data.node_state == find ->
+          % und Reportprozess starten
           self() ! {report, Weight, Edge},
           NewData = Data;
+        % Prüfen, ob das Gewicht der beste ausgehende Kante kleiner als das Gewicht der empfangenen Kante ist
         Weight > Data#data.best_weight ->
+          % und Changerootprozess starten
           NewData = changeroot(Data);
+      % Prüfen, ob das Gewicht der beste ausgehende Kante und das Gewicht der empfangenen Kante gleich infinity sind
         (Weight == Data#data.best_weight) and (Weight == infinity) ->
+          % und
           NewData = Data,
           log(Data, "Node " ++ Data#data.name ++ " stopped"),
           whereis(controller) ! halt,
@@ -257,13 +285,16 @@ init_fragment(Data, ReceivedLevel, ReceivedFragName, ReceivedNodeState, Edge) ->
 .
 
 convergecast_report(Data, Weight, Edge) ->
+  % Vergleichen das Gewicht der besten ausgehenden Kante mit dem Gewicht der empfangenen Kante
   if Weight < Data#data.best_weight ->
       NewBestEdge   = Edge,
       NewWeight     = Weight;
     true ->
+      % beste Kante bekommt neue Wert
       NewBestEdge   = Data#data.best_edge,
       NewWeight     = Data#data.best_weight
   end,
+  % Die Knotendaten mit die neuen Werten aktualisieren
   NewData = Data#data{
     found_count = Data#data.found_count - 1,
     best_edge   = NewBestEdge,
@@ -286,6 +317,7 @@ absorb_fragment(Data, Edge) ->
   }
 .
 
+%Edge aufpassen -> {Weight, self(), neighbor}
 convert_edge(Edge, Data) ->
   {element(1, Edge), Data#data.name, neighbor(Edge, Data)}
 .
