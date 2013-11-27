@@ -9,22 +9,6 @@ start(Name) ->
   global:whereis_name(Name) ! wakeup
 .
 
-start(Name, Filename) ->
-  LogFile     = lists:concat(["log/", Name, ".log"]),
-  %Löschen, falls die Datei schon vorhanden ist
-  file:delete(LogFile),
-  file:delete("log/all_nodes.log"),
-
-  Neighbors = load_neighbors(Filename),
-  Edges     = [{element(1, Neighbor), Name, element(2, Neighbor)} || Neighbor <- Neighbors],
-  werkzeug:logging(LogFile, "Edges loaded: " ++ werkzeug:to_String(Edges) ++ "~n"),
-
-  spawn(fun() ->
-    register(Name),
-    node:start(LogFile, Name, Edges)
-  end)
-.
-
 start_all() ->
   register(controller, self()),
   ping_nodes("hosts"),
@@ -38,6 +22,22 @@ start_all() ->
 
   Branches = collect_data(dict:new(), length(Nodenames)),
   werkzeug:logging("log/all_nodes.log", werkzeug:to_String(Branches) ++ "\n")
+.
+
+start(Name, Filename) ->
+  LogFile     = lists:concat(["log/", Name, ".log"]),
+  %Löschen, falls die Datei schon vorhanden ist
+  file:delete(LogFile),
+  file:delete("log/all_nodes.log"),
+
+  Neighbors = load_neighbors(Filename),
+  Edges     = [{element(1, Neighbor), Name, element(2, Neighbor)} || Neighbor <- Neighbors],
+  werkzeug:logging(LogFile, "Edges loaded: " ++ werkzeug:to_String(Edges) ++ "\n"),
+
+  spawn(fun() ->
+    register(Name),
+    node:start(LogFile, Name, Edges)
+  end)
 .
 
 collect_data(Branches, N) when N > 0 ->
