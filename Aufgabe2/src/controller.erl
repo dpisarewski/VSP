@@ -5,7 +5,8 @@
 
 start(Name) ->
   ping_nodes("hosts"),
-  start(Name, "node.cfg")
+  start(Name, "node.cfg"),
+  global:whereis_name(Name) ! wakeup
 .
 
 start(Name, Filename) ->
@@ -31,6 +32,7 @@ start_all() ->
   Nodenames       = [extract_node_name(Filename) || Filename <- Filenames],
 
   [start(Nodename, lists:concat(["nodes/", Nodename, ".cfg"])) || Nodename <- Nodenames],
+  global:whereis_name(hd(Nodenames)) ! wakeup,
   receive halt -> halt end,
   [global:whereis_name(Nodename) ! {get_data, self()} || Nodename <- Nodenames],
 
