@@ -1,7 +1,5 @@
 package mware_lib;
 
-import name_service.*;
-
 /**
  * Created with IntelliJ IDEA.
  * User: pisare_d

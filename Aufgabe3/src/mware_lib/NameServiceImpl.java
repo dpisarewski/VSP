@@ -1,4 +1,4 @@
-package name_service;
+package mware_lib;
 
 import mware_lib.*;
 
