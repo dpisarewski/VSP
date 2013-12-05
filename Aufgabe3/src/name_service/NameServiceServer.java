@@ -1,11 +1,10 @@
 package name_service;
 
+import mware_lib.Connection;
+
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,13 +14,16 @@ import java.util.Map;
  * Date: 28.11.13
  * Time: 16:11
  */
-public class NameService extends Thread{
+public class NameServiceServer extends Thread{
 
     ServerSocket socket;
-    Map<String, Object> registry;
+    Map<String, String> registry;
 
-    public NameService(int port) throws IOException {
-        registry    = new HashMap<String, Object>();
+    final public static String RESOLVE  = "RESOLVE";
+    final public static String REBIND   = "REBIND";
+
+    public NameServiceServer(int port) throws IOException {
+        registry    = new HashMap<String, String>();
         socket      = new ServerSocket(port);
     }
 
@@ -29,7 +31,7 @@ public class NameService extends Thread{
         int port            = Integer.valueOf(args[0]);
 
         try {
-            (new NameService(port)).start();
+            (new NameServiceServer(port)).start();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -38,35 +40,42 @@ public class NameService extends Thread{
     public void run(){
         String line;
         String command;
-        Socket s;
+        String name;
+        String object;
+        Connection connection;
         BufferedReader reader;
 
         while(true){
             try {
-                s        = socket.accept();
-                reader   = new BufferedReader(new InputStreamReader(s.getInputStream()));
+                connection  = new Connection(socket.accept());
+                reader      = connection.getReader();
                 while((line  = reader.readLine()) != null){
-                    command = line.split(":")[0];
+                    command = line.split("#")[0];
+                    name    = line.split("#")[1];
+                    object  = line.split("#")[2];
+
                     switch(command){
                         case "REBIND":
-                            String name = line.split(":")[1];
+                            registerObject(name, object);
+                            connection.send("OK");
                             break;
                         case "RESOLVE":
+                            connection.send("OK#" + getObject(name));
                             break;
                     }
                 }
+                connection.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
     }
 
-    private void registerObject(String name, Object object){
+    private void registerObject(String name, String object){
         registry.put(name, object);
     }
 
-    private Object getObject(String name){
+    private String getObject(String name){
         return registry.get(name);
     }
 

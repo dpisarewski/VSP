@@ -1,5 +1,7 @@
 package mware_lib;
 
+import java.util.HashMap;
+
 /**
  * Created with IntelliJ IDEA.
  * User: pisare_d
@@ -9,10 +11,12 @@ package mware_lib;
  */
 public class ObjectBroker {
 
-    NameService nameService;
+    private NameService nameService;
+    private static ObjectBroker instance;
+    private HashMap<String, Object> registry;
 
-    public ObjectBroker(String hostname, int port){
-        nameService = new NameServiceImpl(hostname, port);
+    private ObjectBroker(String hostname, int port){
+        nameService = new NameServiceImpl(this, hostname, port);
     }
 
     /**
@@ -36,8 +40,21 @@ public class ObjectBroker {
      * port NameService is listening at
      * @return an ObjectBroker Interface to Nameservice
      */
-    public static ObjectBroker init(String serviceName, int port) {
-        return new ObjectBroker(serviceName, port);
+    public synchronized static ObjectBroker init(String serviceName, int port) {
+        if(instance == null){
+            instance = new ObjectBroker(serviceName, port);
+        }
+        return instance;
     }
+
+    public synchronized void putObject(String name, Object object){
+        registry.put(name, object);
+    }
+
+    public synchronized Object getObject(String name){
+        return registry.get(name);
+    }
+
+
 
 }
