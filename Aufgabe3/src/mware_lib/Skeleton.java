@@ -31,6 +31,7 @@ public class Skeleton extends Thread{
             }
         } catch (Exception e){
             try {
+                e.printStackTrace();
                 connection.send(encodeResult(e));
             } catch (IOException e1) {
                 e1.printStackTrace();

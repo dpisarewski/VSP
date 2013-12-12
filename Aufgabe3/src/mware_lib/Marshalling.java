@@ -39,4 +39,17 @@ public class Marshalling {
         }
         return result;
     }
+
+    public static String encodeInvoke(String name, String methodName, Object object) throws IOException {
+        return "INVOKE#" + name + "#" + methodName + "#" + Marshalling.marshall(object);
+    }
+
+    public static String encodeResult(Object object) throws IOException {
+        return "RESULT#" + Marshalling.marshall(object);
+    }
+
+    public static ArrayList<Object> decodeResult(String result) throws IOException, ClassNotFoundException {
+        String params   = result.split("#")[1];
+        return Marshalling.unmarshall(params);
+    }
 }
