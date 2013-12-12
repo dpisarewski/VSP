@@ -16,7 +16,7 @@ public class Dispatcher extends Thread{
     public final static int PORT = 20000;
     public static String hostname;
 
-    private Dispatcher instance = new Dispatcher();
+    private static Dispatcher instance = new Dispatcher();
 
     private Dispatcher(){
         if(hostname == null){
@@ -26,7 +26,6 @@ public class Dispatcher extends Thread{
                 e.printStackTrace();
             }
         }
-        start();
     }
 
     public void run(){
@@ -41,7 +40,7 @@ public class Dispatcher extends Thread{
         }
     }
 
-    public Dispatcher getInstance(){
+    public static Dispatcher getInstance(){
         return instance;
     }
 

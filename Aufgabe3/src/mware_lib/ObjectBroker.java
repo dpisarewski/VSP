@@ -17,6 +17,8 @@ public class ObjectBroker {
 
     private ObjectBroker(String hostname, int port){
         nameService = new NameServiceImpl(this, hostname, port);
+        registry    = new HashMap<String, Object>();
+        Dispatcher.getInstance().start();
     }
 
     /**
@@ -44,6 +46,10 @@ public class ObjectBroker {
         if(instance == null){
             instance = new ObjectBroker(serviceName, port);
         }
+        return instance;
+    }
+
+    public synchronized static ObjectBroker getInstance() {
         return instance;
     }
 
