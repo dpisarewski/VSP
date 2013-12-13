@@ -27,20 +27,22 @@ public class Skeleton extends Thread{
     }
 
     public void run(){
-        logger.log(Level.INFO, "Started new Skeleton");
+        logger.info("Started new Skeleton");
         try{
             String request = connection.readAll();
-            logger.log(Level.INFO, "Received request " + request + " from " + connection.getHostname() + ":" + connection.getPort());
+            logger.info("Received request " + request + " from " + connection.getHostname() + ":" + connection.getPort());
             if (request != null){
                 String command  = request.split("#")[0];
                 switch(command){
-                    case "INVOKE": invoke(request); break;
+                    case "INVOKE":
+                        connection.sendAndClose(invoke(request));
+                        break;
                 }
             }
         } catch (Exception e){
             try {
                 e.printStackTrace();
-                connection.sendAndClose(encodeResult(e));
+                connection.sendAndClose(Marshalling.encodeResult(e));
             } catch (IOException e1) {
                 e1.printStackTrace();
                 System.exit(1);
@@ -51,18 +53,23 @@ public class Skeleton extends Thread{
     private String invoke(String request) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         ObjectBroker objectBroker = ObjectBroker.getInstance();
         Map methodCall  = Marshalling.decodeInvoke(request);
-        String name     = (String) methodCall.get("method");
-        String method   = (String) methodCall.get("name");
-        ArrayList<Object> parameters = (ArrayList<Object>) methodCall.get("params");
-        logger.log(Level.INFO, "Invoking locally method" + method + " on object " + name + " with parameters: " + parameters.toString());
+        String name     = (String) methodCall.get("name");
+        String method   = (String) methodCall.get("method");
+        ArrayList<Object> parameters        = (ArrayList<Object>) methodCall.get("params");
+        ArrayList<Class> parameterClasses   = collectClasses(parameters);
+        logger.info("Invoking locally method " + method + " on object " + name + " with parameters: " + parameters.toString());
         Object object   = objectBroker.getObject(name);
-        Method m        = object.getClass().getMethod(method, (Class<?>[]) parameters.toArray());
-        Object result   = m.invoke(object, parameters);
-        return encodeResult(result);
+        Method m        = object.getClass().getDeclaredMethod(method, parameterClasses.toArray(new Class[parameterClasses.size()]));
+        Object result   = m.invoke(object, parameters.toArray());
+        return Marshalling.encodeResult(result);
     }
 
-    private String encodeResult(Object object) throws IOException {
-        return "RESULT#" + Marshalling.marshall(object);
+    private ArrayList<Class> collectClasses(List<Object> params){
+        ArrayList<Class> classes = new ArrayList<>();
+        for(Object param : params){
+            classes.add(param.getClass());
+        }
+        return classes;
     }
 
 

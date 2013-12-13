@@ -59,7 +59,7 @@ public class Connection {
     }
 
     public void send(String message) throws IOException {
-        logger.log(Level.INFO, "Sending message to " + hostname + ":" + port + ": " + message);
+        logger.info("Sending message to " + hostname + ":" + port + ": " + message);
         socket.getOutputStream().write((message + "\n").getBytes());
     }
 

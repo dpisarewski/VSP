@@ -23,7 +23,7 @@ public class Dispatcher extends Thread{
     private static Dispatcher instance = new Dispatcher();
 
     private Dispatcher(){
-        logger.log(Level.INFO, "Starting Dispatcher");
+        logger.info("Starting Dispatcher");
         if(hostname == null){
             try {
                 hostname    = Inet4Address.getLocalHost().getHostAddress();
@@ -54,7 +54,7 @@ public class Dispatcher extends Thread{
     private void bind(){
         try {
             socket = new ServerSocket(port);
-            logger.log(Level.INFO, "Bound Dispatcher on port " + port);
+            logger.info("Bound Dispatcher on port " + port);
         } catch (IOException e) {
             port++;
             bind();

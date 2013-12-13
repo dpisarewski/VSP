@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,7 +43,7 @@ public class NameServiceServer extends Thread{
     }
 
     public void run(){
-        logger.log(Level.INFO, "Started NameService on port " + socket.getLocalPort());
+        logger.info("Started NameService on port " + socket.getLocalPort());
         String line;
         String command;
         String name;
@@ -61,12 +62,12 @@ public class NameServiceServer extends Thread{
                 switch(command){
                     case "REBIND":
                         object  = line.split("#")[2];
-                        logger.log(Level.INFO, "Received rebind for object " + name + ": " + object);
+                        logger.info("Received rebind for object " + name + ": " + object);
                         registerObject(name, object);
                         connection.sendAndClose("OK");
                         break;
                     case "RESOLVE":
-                        logger.log(Level.INFO, "Received resolve for object " + name);
+                        logger.info("Received resolve for object " + name);
                         connection.sendAndClose("OK#" + name + "#" + getObject(name));
                         break;
                 }

@@ -14,10 +14,11 @@ public class Proxy {
     private static final Logger logger = Logger.getLogger( Proxy.class.getName() );
 
     public static List<Object> invoke(String hostname, int port, String name, String methodName, Object object){
-        logger.log(Level.INFO, "Invoking method " + methodName + " on object " + name + " on " + hostname + ":" + port);
+        logger.info("Invoking method " + methodName + " on object " + name + " on " + hostname + ":" + port);
         Connection connection = new Connection(hostname, port);
         try {
             String result = connection.sendAndRead(Marshalling.encodeInvoke(name, methodName, object));
+            logger.info("Received response: " + result);
             return Marshalling.decodeResult(result);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();

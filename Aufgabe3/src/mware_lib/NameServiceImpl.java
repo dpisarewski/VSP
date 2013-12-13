@@ -29,21 +29,21 @@ public class NameServiceImpl extends NameService {
 
     @Override
     public void rebind(Object servant, String name) {
-        logger.log(Level.INFO, "Binding object " + name + ": " + servant.toString());
+        logger.info("Binding object " + name + ": " + servant.toString());
         String response;
         objectBroker.putObject(name, servant);
         Connection connection = new Connection(hostname, port);
         response = connection.sendAndRead(NameServiceServer.REBIND + "#" + name + "#" + servant.getClass().getSuperclass().getCanonicalName() + ";" + Dispatcher.hostname + ";" + Dispatcher.getInstance().getPort());
-        logger.log(Level.INFO, "Received response: " + response);
+        logger.info("Received response: " + response);
     }
 
     @Override
     public Object resolve(String name) {
-        logger.log(Level.INFO, "Resolving object: " + name);
+        logger.info("Resolving object: " + name);
         String response;
         Connection connection = new Connection(hostname, port);
         response = connection.sendAndRead(NameServiceServer.RESOLVE + "#" + name);
-        logger.log(Level.INFO, "Received response: " + response);
+        logger.info("Received response: " + response);
         if(response.split("#")[0].equals("OK")){
             String objectName   = response.split("#")[1];
             String params       = response.split("#")[2];

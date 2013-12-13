@@ -36,7 +36,7 @@ public class ObjectBroker {
      * terminates process
      */
     public void shutDown() {
-        logger.log(Level.INFO, "Shutting down ObjectBroker");
+        logger.info("Shutting down ObjectBroker");
         System.exit(0);
     }
     /**
@@ -49,7 +49,7 @@ public class ObjectBroker {
      */
     public synchronized static ObjectBroker init(String serviceName, int port) {
         if(instance == null){
-            logger.log(Level.INFO, "Initializing ObjectBroker");
+            logger.info("Initializing ObjectBroker");
             instance = new ObjectBroker(serviceName, port);
         }
         return instance;
@@ -60,12 +60,12 @@ public class ObjectBroker {
     }
 
     public synchronized void putObject(String name, Object object){
-        logger.log(Level.INFO, "Registering object " + name + " in ObjectBroker");
+        logger.info("Registering object " + name + " in ObjectBroker");
         registry.put(name, object);
     }
 
     public synchronized Object getObject(String name){
-        logger.log(Level.INFO, "Retrieving object " + name + " from ObjectBroker");
+        logger.info("Retrieving object " + name + " from ObjectBroker");
         return registry.get(name);
     }
 

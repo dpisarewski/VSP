@@ -20,14 +20,8 @@ public class Marshalling {
     private static final String RESULT = "RESULT";
 
     public static String marshall(Object object) throws IOException {
-        convertException(object);
-        List<Object> objects = new ArrayList<Object>();
-        objects.add(object);
-        return marshall(objects);
-    }
-
-    private static String marshall(List<Object> objects) throws IOException {
-        logger.log(Level.INFO, "Marshalling objects: " + objects.toString());
+        List<Object> objects = convertObject(object);
+        logger.info("Marshalling objects: " + objects.toString());
         ByteArrayOutputStream outputStream      = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream   = new ObjectOutputStream(outputStream);
         objectOutputStream.writeObject(objects);
@@ -35,17 +29,17 @@ public class Marshalling {
     }
 
     public static List<Object> unmarshall(String params) throws IOException, ClassNotFoundException {
-        logger.log(Level.INFO, "Unmarshalling objects: " + params);
-        ArrayList<Object> result            = new ArrayList<Object>();
+        ArrayList<Object> result = new ArrayList<Object>();
         ByteArrayInputStream inputStream    = new ByteArrayInputStream(Base64.decodeBase64(params));
         ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
         while(true){
             try{
-                result.add(objectInputStream.readObject());
+                result = (ArrayList<Object>) objectInputStream.readObject();
             } catch (EOFException e){
                 break;
             }
         }
+        logger.info("Unmarshalled objects: " + result);
         return result;
     }
 
@@ -74,9 +68,20 @@ public class Marshalling {
         return Marshalling.unmarshall(params);
     }
 
+    private static List<Object> convertObject(Object object){
+        convertException(object);
+        List<Object> objects = new ArrayList<Object>();
+        if (!(object instanceof List)){
+            objects.add(object);
+        } else{
+            objects = (ArrayList<Object>) object;
+        }
+        return objects;
+    }
+
     private static void convertException(Object object){
         if (object instanceof Exception && !(object instanceof InvalidParamException) && !(object instanceof OverdraftException)){
-            logger.log(Level.INFO, "Converting exception " + object.toString() + " into RuntimeException");
+            logger.info("Converting exception " + object.toString() + " into RuntimeException");
             object = new RuntimeException((Exception)object);
         }
     }
