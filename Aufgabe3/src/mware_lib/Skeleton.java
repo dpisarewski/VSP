@@ -35,6 +35,8 @@ public class Skeleton extends Thread{
                     case "INVOKE":
                         connection.sendAndClose(invoke(request));
                         break;
+                    default:
+                        connection.close();
                 }
             }
         } catch (Exception e){
@@ -48,7 +50,7 @@ public class Skeleton extends Thread{
         }
     }
 
-    private String invoke(String request) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private synchronized String invoke(String request) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         ObjectBroker objectBroker = ObjectBroker.getInstance();
         Map methodCall  = Marshalling.decodeInvoke(request);
         String name     = (String) methodCall.get("name");
@@ -65,10 +67,29 @@ public class Skeleton extends Thread{
     private ArrayList<Class> collectClasses(List<Object> params){
         ArrayList<Class> classes = new ArrayList<>();
         for(Object param : params){
-            classes.add(param.getClass());
+            classes.add(findClass(param));
         }
         return classes;
     }
 
+    private Class findClass(Object param){
+        if (param instanceof Double){
+            return Double.TYPE;
+        } else if(param instanceof Integer){
+            return Integer.TYPE;
+        } else if(param instanceof Boolean){
+            return Boolean.TYPE;
+        } else if(param instanceof Byte){
+            return Byte.TYPE;
+        } else if(param instanceof Character){
+            return Character.TYPE;
+        } else if(param instanceof Long){
+            return Long.TYPE;
+        } else if(param instanceof Short){
+            return Short.TYPE;
+        }else{
+           return param.getClass();
+        }
+    }
 
 }

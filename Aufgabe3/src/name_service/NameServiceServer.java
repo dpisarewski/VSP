@@ -47,7 +47,6 @@ public class NameServiceServer extends Thread{
         String name;
         String object;
         Connection connection;
-        BufferedReader reader;
 
         while(true){
             try {
@@ -68,8 +67,9 @@ public class NameServiceServer extends Thread{
                         logger.info("Received resolve for object " + name);
                         connection.sendAndClose("OK#" + name + "#" + getObject(name));
                         break;
+                    default:
+                        connection.close();
                 }
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
