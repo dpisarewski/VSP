@@ -3,6 +3,7 @@ package cash_access;
 import mware_lib.Proxy;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by pisare_d on 05.12.13.
@@ -12,9 +13,15 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
     protected int port;
     protected String name;
 
+    public TransactionImplBaseProxy(String name, String hostname, int port){
+        this.name       = name;
+        this.hostname   = hostname;
+        this.port       = port;
+    }
+
     @Override
     public void deposit(String accountId, double amount) throws InvalidParamException {
-        ArrayList<Object> params = new ArrayList<Object>();
+        List<Object> params = new ArrayList<Object>();
         params.add(accountId);
         params.add(amount);
         Proxy.invoke(hostname, port, name, "deposit", params);
@@ -22,7 +29,7 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
 
     @Override
     public void withdraw(String accountId, double amount) throws InvalidParamException, OverdraftException {
-        ArrayList<Object> params = new ArrayList<Object>();
+        List<Object> params = new ArrayList<Object>();
         params.add(accountId);
         params.add(amount);
         Proxy.invoke(hostname, port, name, "withdraw", params);
@@ -30,7 +37,7 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
 
     @Override
     public double getBalance(String accountId) throws InvalidParamException {
-        ArrayList<Object> params = new ArrayList<Object>();
+        List<Object> params = new ArrayList<Object>();
         params.add(accountId);
         Object result = Proxy.invoke(hostname, port, name, "getBalance", params).get(0);
         return (double) result;

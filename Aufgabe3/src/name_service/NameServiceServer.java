@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -15,6 +17,8 @@ import java.util.Map;
  * Time: 16:11
  */
 public class NameServiceServer extends Thread{
+
+    private static final Logger logger = Logger.getLogger( NameServiceServer.class.getName() );
 
     ServerSocket socket;
     Map<String, String> registry;
@@ -38,6 +42,7 @@ public class NameServiceServer extends Thread{
     }
 
     public void run(){
+        logger.log(Level.INFO, "Started NameService on port " + socket.getLocalPort());
         String line;
         String command;
         String name;
@@ -48,23 +53,24 @@ public class NameServiceServer extends Thread{
         while(true){
             try {
                 connection  = new Connection(socket.accept());
-                reader      = connection.getReader();
-                while((line  = reader.readLine()) != null){
-                    command = line.split("#")[0];
-                    name    = line.split("#")[1];
-                    object  = line.split("#")[2];
+                line        = connection.readAll();
 
-                    switch(command){
-                        case "REBIND":
-                            registerObject(name, object);
-                            connection.send("OK");
-                            break;
-                        case "RESOLVE":
-                            connection.send("OK#" + getObject(name));
-                            break;
-                    }
+                command = line.split("#")[0];
+                name    = line.split("#")[1];
+
+                switch(command){
+                    case "REBIND":
+                        object  = line.split("#")[2];
+                        logger.log(Level.INFO, "Received rebind for object " + name + ": " + object);
+                        registerObject(name, object);
+                        connection.sendAndClose("OK");
+                        break;
+                    case "RESOLVE":
+                        logger.log(Level.INFO, "Received resolve for object " + name);
+                        connection.sendAndClose("OK#" + name + "#" + getObject(name));
+                        break;
                 }
-                connection.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
             }

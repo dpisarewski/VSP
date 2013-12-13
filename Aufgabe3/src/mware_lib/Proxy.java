@@ -2,25 +2,32 @@ package mware_lib;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by pisare_d on 12.12.13.
  */
 public class Proxy {
 
-    public static ArrayList<Object> invoke(String hostname, int port, String name, String methodName, Object object){
+    private static final Logger logger = Logger.getLogger( Proxy.class.getName() );
+
+    public static List<Object> invoke(String hostname, int port, String name, String methodName, Object object){
+        logger.log(Level.INFO, "Invoking method " + methodName + " on object " + name + " on " + hostname + ":" + port);
         Connection connection = new Connection(hostname, port);
         try {
-            connection.send(Marshalling.encodeInvoke(name, methodName, object));
-            String result = connection.readAll();
+            String result = connection.sendAndRead(Marshalling.encodeInvoke(name, methodName, object));
             return Marshalling.decodeResult(result);
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             e.printStackTrace();
             try {
-                connection.send(Marshalling.encodeResult(e));
+                connection.sendAndClose(Marshalling.encodeResult(e));
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
         return null;
     }

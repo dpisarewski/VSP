@@ -15,6 +15,12 @@ public class AccountImplBaseProxy extends AccountImplBase {
     protected int port;
     protected String name;
 
+    public AccountImplBaseProxy(String name, String hostname, int port){
+        this.name       = name;
+        this.hostname   = hostname;
+        this.port       = port;
+    }
+
     @Override
     public void transfer(double amount) throws OverdraftException {
         Proxy.invoke(hostname, port, name, "transfer", amount);

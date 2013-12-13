@@ -4,6 +4,8 @@ import name_service.NameServiceServer;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -12,6 +14,8 @@ import java.lang.reflect.InvocationTargetException;
  * Time: 14:46
  */
 public class NameServiceImpl extends NameService {
+
+    private static final Logger logger = Logger.getLogger( NameServiceImpl.class.getName() );
 
     String hostname;
     int port;
@@ -25,25 +29,30 @@ public class NameServiceImpl extends NameService {
 
     @Override
     public void rebind(Object servant, String name) {
+        logger.log(Level.INFO, "Binding object " + name + ": " + servant.toString());
         String response;
         objectBroker.putObject(name, servant);
         Connection connection = new Connection(hostname, port);
-        response = connection.send(NameServiceServer.REBIND + "#" + name + "#" + servant.getClass().getCanonicalName() + "#" + Dispatcher.hostname + "#" + Dispatcher.PORT);
+        response = connection.sendAndRead(NameServiceServer.REBIND + "#" + name + "#" + servant.getClass().getSuperclass().getCanonicalName() + ";" + Dispatcher.hostname + ";" + Dispatcher.getInstance().getPort());
+        logger.log(Level.INFO, "Received response: " + response);
     }
 
     @Override
     public Object resolve(String name) {
+        logger.log(Level.INFO, "Resolving object: " + name);
         String response;
         Connection connection = new Connection(hostname, port);
-        response = connection.send(NameServiceServer.RESOLVE + "#" + name);
+        response = connection.sendAndRead(NameServiceServer.RESOLVE + "#" + name);
+        logger.log(Level.INFO, "Received response: " + response);
         if(response.split("#")[0].equals("OK")){
             String objectName   = response.split("#")[1];
-            String objectClasse = response.split("#")[2];
-            String objectHost   = response.split("#")[3];
-            String objectPort   = response.split("#")[4];
+            String params       = response.split("#")[2];
+            String objectClasse = params.split(";")[0];
+            String objectHost   = params.split(";")[1];
+            Integer objectPort  = Integer.valueOf(params.split(";")[2]);
             try {
-                Constructor<?> constructor = Class.forName(objectName + "Proxy").getConstructor();
-                return constructor.newInstance(objectName, objectClasse, objectHost, objectPort);
+                Constructor<?> constructor = Class.forName(objectClasse + "Proxy").getConstructor(new Class[]{String.class, String.class, int.class});
+                return constructor.newInstance(objectName, objectHost, objectPort);
             } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
                 e.printStackTrace();
             }

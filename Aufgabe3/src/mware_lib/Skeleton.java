@@ -5,6 +5,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,6 +18,8 @@ import java.util.HashMap;
  */
 public class Skeleton extends Thread{
 
+    private static final Logger logger = Logger.getLogger( Skeleton.class.getName() );
+
     private Connection connection;
 
     public Skeleton(Connection connection){
@@ -21,8 +27,10 @@ public class Skeleton extends Thread{
     }
 
     public void run(){
+        logger.log(Level.INFO, "Started new Skeleton");
         try{
             String request = connection.readAll();
+            logger.log(Level.INFO, "Received request " + request + " from " + connection.getHostname() + ":" + connection.getPort());
             if (request != null){
                 String command  = request.split("#")[0];
                 switch(command){
@@ -32,7 +40,7 @@ public class Skeleton extends Thread{
         } catch (Exception e){
             try {
                 e.printStackTrace();
-                connection.send(encodeResult(e));
+                connection.sendAndClose(encodeResult(e));
             } catch (IOException e1) {
                 e1.printStackTrace();
                 System.exit(1);
@@ -42,10 +50,11 @@ public class Skeleton extends Thread{
 
     private String invoke(String request) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         ObjectBroker objectBroker = ObjectBroker.getInstance();
-        String name     = request.split("#")[1];
-        String method   = request.split("#")[2];
-        String params   = request.split("#")[3];
-        ArrayList<Object> parameters = Marshalling.unmarshall(params);
+        Map methodCall  = Marshalling.decodeInvoke(request);
+        String name     = (String) methodCall.get("method");
+        String method   = (String) methodCall.get("name");
+        ArrayList<Object> parameters = (ArrayList<Object>) methodCall.get("params");
+        logger.log(Level.INFO, "Invoking locally method" + method + " on object " + name + " with parameters: " + parameters.toString());
         Object object   = objectBroker.getObject(name);
         Method m        = object.getClass().getMethod(method, (Class<?>[]) parameters.toArray());
         Object result   = m.invoke(object, parameters);

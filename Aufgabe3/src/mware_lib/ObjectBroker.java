@@ -1,6 +1,8 @@
 package mware_lib;
 
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,6 +12,8 @@ import java.util.HashMap;
 
  */
 public class ObjectBroker {
+
+    private static final Logger logger = Logger.getLogger( ObjectBroker.class.getName() );
 
     private NameService nameService;
     private static ObjectBroker instance;
@@ -32,6 +36,7 @@ public class ObjectBroker {
      * terminates process
      */
     public void shutDown() {
+        logger.log(Level.INFO, "Shutting down ObjectBroker");
         System.exit(0);
     }
     /**
@@ -44,6 +49,7 @@ public class ObjectBroker {
      */
     public synchronized static ObjectBroker init(String serviceName, int port) {
         if(instance == null){
+            logger.log(Level.INFO, "Initializing ObjectBroker");
             instance = new ObjectBroker(serviceName, port);
         }
         return instance;
@@ -54,10 +60,12 @@ public class ObjectBroker {
     }
 
     public synchronized void putObject(String name, Object object){
+        logger.log(Level.INFO, "Registering object " + name + " in ObjectBroker");
         registry.put(name, object);
     }
 
     public synchronized Object getObject(String name){
+        logger.log(Level.INFO, "Retrieving object " + name + " from ObjectBroker");
         return registry.get(name);
     }
 

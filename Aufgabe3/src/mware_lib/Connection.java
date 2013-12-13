@@ -4,11 +4,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by pisare_d on 05.12.13.
  */
 public class Connection {
+
+    private static final Logger logger = Logger.getLogger( Connection.class.getName() );
 
     String hostname;
     Socket socket;
@@ -49,47 +53,47 @@ public class Connection {
     }
 
     public Connection(Socket socket){
-        this.socket = socket;
+        this.socket     = socket;
+        this.hostname   = socket.getInetAddress().getHostAddress();
+        this.port       = socket.getPort();
     }
 
-    public String send(String message){
+    public void send(String message) throws IOException {
+        logger.log(Level.INFO, "Sending message to " + hostname + ":" + port + ": " + message);
+        socket.getOutputStream().write((message + "\n").getBytes());
+    }
+
+    public void sendAndClose(String message){
         try {
-            socket.getOutputStream().write(message.getBytes());
-            return readAll();
+            send(message);
+            close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String sendAndRead(String message){
+        try {
+            send(message);
+            String result = readAll();
+            close();
+            return result;
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    public BufferedReader getReader(){
-        try {
-            return new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+    public BufferedReader getReader() throws IOException {
+        return new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
-    public void close(){
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public void close() throws IOException {
+        socket.close();
     }
 
-    public String readAll(){
-        String result   = null;
-        String line     = null;
-        try {
-            while((line = getReader().readLine()) != null){
-                result  = (result == null) ? "" : result + line;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return result;
+    public String readAll() throws IOException {
+        return getReader().readLine();
     }
 
 
