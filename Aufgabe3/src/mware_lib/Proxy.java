@@ -1,9 +1,7 @@
 package mware_lib;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -14,7 +12,7 @@ public class Proxy {
     private static final Logger logger = Logger.getLogger( Proxy.class.getName() );
 
     public static List<Object> invoke(String hostname, int port, String name, String methodName, Object object){
-        logger.info("Invoking method " + methodName + " on object " + name + " on " + hostname + ":" + port);
+        logger.info("Invoking method " + methodName + " on object " + name + " from " + hostname + ":" + port);
         Connection connection = new Connection(hostname, port);
         try {
             String result = connection.sendAndRead(Marshalling.encodeInvoke(name, methodName, object));

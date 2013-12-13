@@ -1,7 +1,6 @@
 package mware_lib;
 
 import java.util.HashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**

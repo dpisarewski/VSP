@@ -2,7 +2,6 @@ package mware_lib;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**

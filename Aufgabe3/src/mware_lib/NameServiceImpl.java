@@ -4,7 +4,6 @@ import name_service.NameServiceServer;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
