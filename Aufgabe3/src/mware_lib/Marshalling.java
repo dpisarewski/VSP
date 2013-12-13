@@ -2,6 +2,7 @@ package mware_lib;
 
 import bank_access.OverdraftException;
 import cash_access.InvalidParamException;
+import org.apache.commons.codec.binary.Base64;
 
 import java.io.*;
 import java.util.*;
@@ -30,13 +31,13 @@ public class Marshalling {
         ByteArrayOutputStream outputStream      = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream   = new ObjectOutputStream(outputStream);
         objectOutputStream.writeObject(objects);
-        return Base64.encode(outputStream.toByteArray());
+        return new String(Base64.encodeBase64(outputStream.toByteArray()));
     }
 
     public static List<Object> unmarshall(String params) throws IOException, ClassNotFoundException {
         logger.log(Level.INFO, "Unmarshalling objects: " + params);
         ArrayList<Object> result            = new ArrayList<Object>();
-        ByteArrayInputStream inputStream    = new ByteArrayInputStream(Base64.decode(params));
+        ByteArrayInputStream inputStream    = new ByteArrayInputStream(Base64.decodeBase64(params));
         ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
         while(true){
             try{
