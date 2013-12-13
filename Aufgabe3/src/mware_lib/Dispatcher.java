@@ -34,8 +34,8 @@ public class Dispatcher extends Thread{
     }
 
     public void run(){
+        bind();
         while(true){
-            bind();
             Connection connection   = null;
             try {
                 connection = new Connection(socket.accept());

@@ -17,17 +17,25 @@ public class Proxy {
         try {
             String result = connection.sendAndRead(Marshalling.encodeInvoke(name, methodName, object));
             logger.info("Received response: " + result);
-            return Marshalling.decodeResult(result);
-        } catch (ClassNotFoundException e) {
+            List<Object> resultObjects = Marshalling.decodeResult(result);
+            raiseException(resultObjects);
+            return resultObjects;
+        } catch (Exception e) {
             e.printStackTrace();
             try {
                 connection.sendAndClose(Marshalling.encodeResult(e));
             } catch (IOException e1) {
                 e1.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
         return null;
+    }
+
+    private static void raiseException(List<Object> objects) throws Exception {
+        for(Object object : objects){
+            if(object instanceof Exception){
+                throw (Exception) object;
+            }
+        }
     }
 }
