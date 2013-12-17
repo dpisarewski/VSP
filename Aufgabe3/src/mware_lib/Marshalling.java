@@ -2,7 +2,6 @@ package mware_lib;
 
 import bank_access.OverdraftException;
 import cash_access.InvalidParamException;
-import org.apache.commons.codec.binary.Base64;
 
 import java.io.*;
 import java.util.*;
@@ -19,21 +18,21 @@ public class Marshalling {
     private static final String RESULT = "RESULT";
 
     public static String marshall(Object object) throws IOException {
-        List<Object> objects = convertObject(object);
-        logger.info("Marshalling objects: " + objects.toString());
+        convertException(object);
+        logger.info("Marshalling objects: " + object.toString());
         ByteArrayOutputStream outputStream      = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream   = new ObjectOutputStream(outputStream);
-        objectOutputStream.writeObject(objects);
-        return new String(Base64.encodeBase64(outputStream.toByteArray()));
+        objectOutputStream.writeObject(object);
+        return new String(new Base64().encode(outputStream.toByteArray()));
     }
 
-    public static List<Object> unmarshall(String params) throws IOException, ClassNotFoundException {
-        ArrayList<Object> result = new ArrayList<Object>();
-        ByteArrayInputStream inputStream    = new ByteArrayInputStream(Base64.decodeBase64(params));
+    public static Map<String, Object> unmarshall(String params) throws IOException, ClassNotFoundException {
+        Map<String, Object> result = new HashMap<>();
+        ByteArrayInputStream inputStream    = new ByteArrayInputStream(new Base64().decode(params));
         ObjectInputStream objectInputStream = new ObjectInputStream(inputStream);
         while(true){
             try{
-                result = (ArrayList<Object>) objectInputStream.readObject();
+                result = (Map<String, Object>) objectInputStream.readObject();
             } catch (EOFException e){
                 break;
             }
@@ -43,39 +42,21 @@ public class Marshalling {
     }
 
     public static String encodeInvoke(String name, String methodName, Object object) throws IOException {
-        return INVOKE + "#" + name + "#" + methodName + "#" + Marshalling.marshall(object);
-    }
-
-    public static Map decodeInvoke(String request) throws IOException, ClassNotFoundException {
-        String name     = request.split("#")[1];
-        String method   = request.split("#")[2];
-        String params   = request.split("#")[3];
-        List<Object> parameters = Marshalling.unmarshall(params);
-        Map<String, Object> result = new HashMap<String, Object>();
-        result.put("name", name);
-        result.put("method", method);
-        result.put("params", parameters);
-        return result;
+        Map<String, Object> request = new HashMap<>();
+        request.put("command", INVOKE);
+        request.put("name", name);
+        request.put("method", methodName);
+        request.put("params", convertObject(object));
+        return Marshalling.marshall(request);
     }
 
     public static String encodeResult(Object object) throws IOException {
-        return RESULT + "#" + Marshalling.marshall(object);
-    }
-
-    public static List<Object> decodeResult(String result) throws IOException, ClassNotFoundException {
-        String params   = result.split("#")[1];
-        return Marshalling.unmarshall(params);
-    }
-
-    private static List<Object> convertObject(Object object){
-        convertException(object);
-        List<Object> objects = new ArrayList<Object>();
-        if (!(object instanceof List)){
-            objects.add(object);
-        } else{
-            objects = (ArrayList<Object>) object;
-        }
-        return objects;
+        Map<String, Object> request = new HashMap<>();
+        List<Object> params = new ArrayList<Object>();
+        params.add(object);
+        request.put("command", RESULT);
+        request.put("params", params);
+        return Marshalling.marshall(request);
     }
 
     private static void convertException(Object object){
@@ -83,5 +64,18 @@ public class Marshalling {
             logger.info("Converting exception " + object.toString() + " into RuntimeException");
             object = new RuntimeException((Exception)object);
         }
+    }
+
+    private static List<Object> convertObject(Object object){
+        convertException(object);
+        List<Object> objects = new ArrayList<Object>();
+        if(object == null) return objects;
+
+        if (!(object instanceof List)){
+            objects.add(object);
+        } else{
+            objects = (ArrayList<Object>) object;
+        }
+        return objects;
     }
 }

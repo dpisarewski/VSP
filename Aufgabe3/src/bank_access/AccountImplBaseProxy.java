@@ -6,6 +6,7 @@ import mware_lib.Proxy;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by pisare_d on 05.12.13.
@@ -28,8 +29,8 @@ public class AccountImplBaseProxy extends AccountImplBase {
 
     @Override
     public double getBalance() {
-        Object result = Proxy.invoke(hostname, port, name, "getBalance", new ArrayList<Object>()).get(0);
-        return (double) result;
+        List<Object> result = (List<Object>) Proxy.invoke(hostname, port, name, "getBalance", null).get("params");
+        return (double) result.get(0);
     }
 
 

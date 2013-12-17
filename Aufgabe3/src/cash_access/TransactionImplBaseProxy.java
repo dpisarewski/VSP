@@ -39,7 +39,7 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
     public double getBalance(String accountId) throws InvalidParamException {
         List<Object> params = new ArrayList<Object>();
         params.add(accountId);
-        Object result = Proxy.invoke(hostname, port, name, "getBalance", params).get(0);
-        return (double) result;
+        List<Object> result = (List<Object>) Proxy.invoke(hostname, port, name, "getBalance", params).get("params");
+        return (double) result.get(0);
     }
 }
