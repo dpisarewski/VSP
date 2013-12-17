@@ -1,6 +1,7 @@
 package mware_lib;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -19,21 +20,16 @@ public class Proxy {
             String result = connection.sendAndRead(Marshalling.encodeInvoke(name, methodName, object));
             logger.info("Received response: " + result);
             Map<String, Object> resultObjects = Marshalling.unmarshall(result);
-            //raiseException(resultObjects);
+            raiseException(resultObjects);
             return resultObjects;
         } catch (Exception e) {
             e.printStackTrace();
-            try {
-                connection.sendAndClose(Marshalling.encodeResult(e));
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
         }
         return null;
     }
 
-    private static void raiseException(List<Object> objects) throws Exception {
-        for(Object object : objects){
+    private static void raiseException(Map<String, Object> result) throws Exception {
+        for(Object object : (ArrayList<Object>) result.get("params")){
             if(object instanceof Exception){
                 throw (Exception) object;
             }

@@ -18,7 +18,6 @@ public class Marshalling {
     private static final String RESULT = "RESULT";
 
     public static String marshall(Object object) throws IOException {
-        convertException(object);
         logger.info("Marshalling objects: " + object.toString());
         ByteArrayOutputStream outputStream      = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream   = new ObjectOutputStream(outputStream);
@@ -52,22 +51,21 @@ public class Marshalling {
 
     public static String encodeResult(Object object) throws IOException {
         Map<String, Object> request = new HashMap<>();
-        List<Object> params = new ArrayList<Object>();
-        params.add(object);
         request.put("command", RESULT);
-        request.put("params", params);
+        request.put("params", convertObject(object));
         return Marshalling.marshall(request);
     }
 
-    private static void convertException(Object object){
+    private static Object convertException(Object object){
         if (object instanceof Exception && !(object instanceof InvalidParamException) && !(object instanceof OverdraftException)){
             logger.info("Converting exception " + object.toString() + " into RuntimeException");
-            object = new RuntimeException((Exception)object);
+            return new RuntimeException((Exception)object);
         }
+        return object;
     }
 
     private static List<Object> convertObject(Object object){
-        convertException(object);
+        object = convertException(object);
         List<Object> objects = new ArrayList<Object>();
         if(object == null) return objects;
 
