@@ -13,7 +13,7 @@ public class Proxy {
 
     private static final Logger logger = Logger.getLogger( Proxy.class.getName() );
 
-    public static Map<String, Object> invoke(String hostname, int port, String name, String methodName, Object object) throws Exception {
+    public static synchronized Map<String, Object> invoke(String hostname, int port, String name, String methodName, Object object) throws Exception {
         logger.info("Invoking method " + methodName + " on object " + name + " from " + hostname + ":" + port);
         Connection connection = new Connection(hostname, port);
 

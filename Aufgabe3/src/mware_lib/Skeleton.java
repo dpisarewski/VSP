@@ -39,22 +39,16 @@ public class Skeleton extends Thread{
                         connection.close();
                 }
             }
-        } catch (IOException e){
+        } catch (IOException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException e){
             e.printStackTrace();
         } catch (InvocationTargetException e){
             try {
-                e.printStackTrace();
+                 e.printStackTrace();
                 connection.sendAndClose(Marshalling.encodeResult(extractException(e)));
             } catch (IOException e1) {
                 e1.printStackTrace();
                 System.exit(1);
             }
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
         }
     }
 
