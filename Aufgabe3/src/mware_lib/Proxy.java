@@ -13,19 +13,15 @@ public class Proxy {
 
     private static final Logger logger = Logger.getLogger( Proxy.class.getName() );
 
-    public static Map<String, Object> invoke(String hostname, int port, String name, String methodName, Object object){
+    public static Map<String, Object> invoke(String hostname, int port, String name, String methodName, Object object) throws Exception {
         logger.info("Invoking method " + methodName + " on object " + name + " from " + hostname + ":" + port);
         Connection connection = new Connection(hostname, port);
-        try {
-            String result = connection.sendAndRead(Marshalling.encodeInvoke(name, methodName, object));
-            logger.info("Received response: " + result);
-            Map<String, Object> resultObjects = Marshalling.unmarshall(result);
-            raiseException(resultObjects);
-            return resultObjects;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+
+        String result = connection.sendAndRead(Marshalling.encodeInvoke(name, methodName, object));
+        logger.info("Received response: " + result);
+        Map<String, Object> resultObjects = Marshalling.unmarshall(result);
+        raiseException(resultObjects);
+        return resultObjects;
     }
 
     private static void raiseException(Map<String, Object> result) throws Exception {

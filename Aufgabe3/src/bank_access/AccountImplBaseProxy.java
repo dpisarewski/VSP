@@ -23,12 +23,12 @@ public class AccountImplBaseProxy extends AccountImplBase {
     }
 
     @Override
-    public void transfer(double amount) throws OverdraftException {
+    public void transfer(double amount) throws Exception {
         Proxy.invoke(hostname, port, name, "transfer", amount);
     }
 
     @Override
-    public double getBalance() {
+    public double getBalance() throws Exception {
         List<Object> result = (List<Object>) Proxy.invoke(hostname, port, name, "getBalance", null).get("params");
         return (double) result.get(0);
     }

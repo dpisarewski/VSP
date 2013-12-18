@@ -9,7 +9,7 @@ package bank_access;
  */
 public abstract class ManagerImplBase {
 
-    public abstract String createAccount(String owner,String branch);
+    public abstract String createAccount(String owner,String branch) throws Exception;
     public static ManagerImplBase narrowCast(Object gor) {
         return (ManagerImplBase) gor;
     }

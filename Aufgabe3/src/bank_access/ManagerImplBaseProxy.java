@@ -20,7 +20,7 @@ public class ManagerImplBaseProxy extends ManagerImplBase {
     }
 
     @Override
-    public String createAccount(String owner, String branch) {
+    public String createAccount(String owner, String branch) throws Exception {
         List<Object> params = new ArrayList<Object>();
         params.add(owner);
         params.add(branch);

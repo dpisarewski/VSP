@@ -8,8 +8,8 @@ package bank_access;
 
  */
 public abstract class AccountImplBase {
-    public abstract void transfer(double amount) throws OverdraftException;
-    public abstract double getBalance();
+    public abstract void transfer(double amount) throws Exception;
+    public abstract double getBalance() throws Exception;
     public static AccountImplBase narrowCast(Object gor) {
         return (AccountImplBase) gor;
     }

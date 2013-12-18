@@ -39,14 +39,22 @@ public class Skeleton extends Thread{
                         connection.close();
                 }
             }
-        } catch (Exception e){
+        } catch (IOException e){
+            e.printStackTrace();
+        } catch (InvocationTargetException e){
             try {
                 e.printStackTrace();
-                connection.sendAndClose(Marshalling.encodeResult(e));
+                connection.sendAndClose(Marshalling.encodeResult(extractException(e)));
             } catch (IOException e1) {
                 e1.printStackTrace();
                 System.exit(1);
             }
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
         }
     }
 
@@ -90,6 +98,10 @@ public class Skeleton extends Thread{
         }else{
            return param.getClass();
         }
+    }
+
+    private Exception extractException(InvocationTargetException e){
+        return (Exception) e.getTargetException();
     }
 
 }

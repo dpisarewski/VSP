@@ -20,7 +20,7 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
     }
 
     @Override
-    public void deposit(String accountId, double amount) throws InvalidParamException {
+    public void deposit(String accountId, double amount) throws Exception {
         List<Object> params = new ArrayList<Object>();
         params.add(accountId);
         params.add(amount);
@@ -28,7 +28,7 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
     }
 
     @Override
-    public void withdraw(String accountId, double amount) throws InvalidParamException, OverdraftException {
+    public void withdraw(String accountId, double amount) throws Exception {
         List<Object> params = new ArrayList<Object>();
         params.add(accountId);
         params.add(amount);
@@ -36,7 +36,7 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
     }
 
     @Override
-    public double getBalance(String accountId) throws InvalidParamException {
+    public double getBalance(String accountId) throws Exception {
         List<Object> params = new ArrayList<Object>();
         params.add(accountId);
         List<Object> result = (List<Object>) Proxy.invoke(hostname, port, name, "getBalance", params).get("params");
