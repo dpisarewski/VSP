@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class NameServiceThread extends Thread {
 
-    private static final Logger logger = Logger.getLogger( NameServiceServer.class.getName() );
+    private static final Logger logger = Logger.getLogger( NameServiceThread.class.getName() );
 
     Connection connection;
     NameServiceServer server;
