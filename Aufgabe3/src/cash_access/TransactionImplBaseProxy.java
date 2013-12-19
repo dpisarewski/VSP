@@ -24,7 +24,7 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
         List<Object> params = new ArrayList<Object>();
         params.add(accountId);
         params.add(amount);
-        Proxy.invoke(hostname, port, name, "deposit", params, false);
+        Proxy.invoke(hostname, port, name, "deposit", params);
     }
 
     @Override
@@ -32,14 +32,14 @@ public class TransactionImplBaseProxy extends TransactionImplBase {
         List<Object> params = new ArrayList<Object>();
         params.add(accountId);
         params.add(amount);
-        Proxy.invoke(hostname, port, name, "withdraw", params, false);
+        Proxy.invoke(hostname, port, name, "withdraw", params);
     }
 
     @Override
     public double getBalance(String accountId) throws Exception {
         List<Object> params = new ArrayList<Object>();
         params.add(accountId);
-        List<Object> result = (List<Object>) Proxy.invoke(hostname, port, name, "getBalance", params, true).get("params");
+        List<Object> result = (List<Object>) Proxy.invoke(hostname, port, name, "getBalance", params).get("params");
         return (double) result.get(0);
     }
 }

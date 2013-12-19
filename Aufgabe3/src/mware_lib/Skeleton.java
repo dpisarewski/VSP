@@ -29,15 +29,13 @@ public class Skeleton extends Thread{
         try{
             String request = connection.readAll();
             logger.info("Received request " + request + " from " + connection.getHostname() + ":" + connection.getPort());
-            if (request != null){
-                String command  = (String) Marshalling.unmarshall(request).get("command");
-                switch(command){
-                    case "INVOKE":
-                        connection.sendAndClose(invoke(request));
-                        break;
-                    default:
-                        connection.close();
-                }
+            String command  = (String) Marshalling.unmarshall(request).get("command");
+            switch(command){
+                case "INVOKE":
+                    connection.sendAndClose(invoke(request));
+                    break;
+                default:
+                    connection.close();
             }
         } catch (IOException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException e){
             e.printStackTrace();
@@ -52,7 +50,7 @@ public class Skeleton extends Thread{
         }
     }
 
-    private synchronized String invoke(String request) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private String invoke(String request) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         ObjectBroker objectBroker = ObjectBroker.getInstance();
         Map methodCall  = Marshalling.unmarshall(request);
         String name     = (String) methodCall.get("name");

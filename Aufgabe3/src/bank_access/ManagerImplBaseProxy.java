@@ -24,7 +24,7 @@ public class ManagerImplBaseProxy extends ManagerImplBase {
         List<Object> params = new ArrayList<Object>();
         params.add(owner);
         params.add(branch);
-        List<Object> result = (List<Object>) Proxy.invoke(hostname, port, name, "createAccount", params, true).get("params");
+        List<Object> result = (List<Object>) Proxy.invoke(hostname, port, name, "createAccount", params).get("params");
         return (String) result.get(0);
     }
 }
