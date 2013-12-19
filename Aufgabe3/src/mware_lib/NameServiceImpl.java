@@ -2,8 +2,11 @@ package mware_lib;
 
 import name_service.NameServiceServer;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -27,30 +30,31 @@ public class NameServiceImpl extends NameService {
     }
 
     @Override
-    public void rebind(Object servant, String name) {
+    public void rebind(Object servant, String name) throws IOException {
         logger.info("Binding object " + name + ": " + servant.toString());
         String response;
         objectBroker.putObject(name, servant);
         Connection connection = new Connection(hostname, port);
-        response = connection.sendAndRead(NameServiceServer.REBIND + "#" + name + "#" + servant.getClass().getSuperclass().getCanonicalName() + ";" + Dispatcher.hostname + ";" + Dispatcher.getInstance().getPort());
+        response = connection.sendAndRead(Marshalling.encodeRebind(name, servant.getClass().getSuperclass().getCanonicalName(), Dispatcher.hostname, Dispatcher.getInstance().getPort()));
         logger.info("Received response: " + response);
     }
 
     @Override
-    public Object resolve(String name) {
+    public Object resolve(String name) throws IOException, ClassNotFoundException {
         logger.info("Resolving object: " + name);
-        String response;
-        Connection connection = new Connection(hostname, port);
-        response = connection.sendAndRead(NameServiceServer.RESOLVE + "#" + name);
+        Connection connection   = new Connection(hostname, port);
+        String response         = connection.sendAndRead(Marshalling.encodeResolve(name));
         logger.info("Received response: " + response);
-        if(response.split("#")[0].equals("OK")){
-            String objectName   = response.split("#")[1];
-            String params       = response.split("#")[2];
-            String objectClasse = params.split(";")[0];
-            String objectHost   = params.split(";")[1];
-            Integer objectPort  = Integer.valueOf(params.split(";")[2]);
+
+        Map<String, Object> objectValues    = Marshalling.unmarshall(response);
+        String command                      = (String) objectValues.get("command");
+        if(command.equals("RESULT")){
+            String objectName           = (String) objectValues.get("name");
+            String objectClassName      = (String) objectValues.get("classname");
+            String objectHost           = (String) objectValues.get("hostname");
+            Integer objectPort          = (Integer) objectValues.get("port");
             try {
-                Constructor<?> constructor = Class.forName(objectClasse + "Proxy").getConstructor(new Class[]{String.class, String.class, int.class});
+                Constructor<?> constructor = Class.forName(objectClassName + "Proxy").getConstructor(new Class[]{String.class, String.class, int.class});
                 return constructor.newInstance(objectName, objectHost, objectPort);
             } catch (NoSuchMethodException | ClassNotFoundException | InvocationTargetException | IllegalAccessException | InstantiationException e) {
                 e.printStackTrace();

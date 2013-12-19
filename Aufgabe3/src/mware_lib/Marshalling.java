@@ -2,6 +2,7 @@ package mware_lib;
 
 import bank_access.OverdraftException;
 import cash_access.InvalidParamException;
+import name_service.NameServiceServer;
 
 import java.io.*;
 import java.util.*;
@@ -14,8 +15,10 @@ public class Marshalling {
 
     private static final Logger logger = Logger.getLogger( Marshalling.class.getName() );
 
-    private static final String INVOKE = "INVOKE";
-    private static final String RESULT = "RESULT";
+    private static final String INVOKE  = "INVOKE";
+    private static final String RESULT  = "RESULT";
+    private static final String REBIND  = "REBIND";
+    private static final String RESOLVE = "RESOLVE";
 
     public static String marshall(Object object) throws IOException {
         logger.info("Marshalling objects: " + object.toString());
@@ -53,6 +56,30 @@ public class Marshalling {
         Map<String, Object> request = new HashMap<>();
         request.put("command", RESULT);
         request.put("params", convertObject(object));
+        return Marshalling.marshall(request);
+    }
+
+    public static String encodeRebind(String name, String classname, String hostname, int port) throws IOException {
+        Map<String, Object> request = new HashMap<>();
+        request.put("command", REBIND);
+        request.put("name", name);
+        request.put("classname", classname);
+        request.put("hostname", hostname);
+        request.put("port", port);
+        return Marshalling.marshall(request);
+    }
+
+    public static String encodeResolve(String name) throws IOException {
+        Map<String, Object> request = new HashMap<>();
+        request.put("command", RESOLVE);
+        request.put("name", name);
+        return Marshalling.marshall(request);
+    }
+
+    public static String encodeResolveResponse(Map<String, Object> objectData) throws IOException {
+        Map<String, Object> request = new HashMap<>();
+        request.put("command", RESULT);
+        request.putAll(objectData);
         return Marshalling.marshall(request);
     }
 
