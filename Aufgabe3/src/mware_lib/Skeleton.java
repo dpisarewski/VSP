@@ -38,12 +38,16 @@ public class Skeleton extends Thread{
                 default:
                     connection.close();
             }
-        } catch (IOException | ClassNotFoundException | NoSuchMethodException | IllegalAccessException e){
-            e.printStackTrace();
         } catch (InvocationTargetException e){
             try {
-                 e.printStackTrace();
                 connection.sendAndClose(Marshalling.encodeResult(extractException(e)));
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                System.exit(1);
+            }
+        } catch (Exception e){
+            try {
+                connection.sendAndClose(Marshalling.encodeResult(e));
             } catch (IOException e1) {
                 e1.printStackTrace();
                 System.exit(1);
@@ -59,7 +63,8 @@ public class Skeleton extends Thread{
         ArrayList<Class> parameterClasses   = collectClasses(parameters);
         logger.info("Invoking locally method " + method + " on object " + name + " with parameters: " + parameters.toString());
         Object object   = objectBroker.getObject(name);
-        Method m        = object.getClass().getDeclaredMethod(method, parameterClasses.toArray(new Class[parameterClasses.size()]));
+        Method m        = object.getClass().getMethod(method, parameterClasses.toArray(new Class[parameterClasses.size()]));
+        m.setAccessible(true);
         Object result   = m.invoke(object, parameters.toArray());
         return Marshalling.encodeResult(result);
     }

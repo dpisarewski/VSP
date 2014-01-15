@@ -1,0 +1,31 @@
+1. im Ordner build/classes
+	
+	FuerBank.jar
+		- "jar -cfv FuerBank.jar bank_access mware_lib"
+	
+	
+	FuerFiliale.jar
+		- "jar -cfv FuerFiliale.jar bank_access mware_lib cash_access"
+	
+	Fuer Geldautomat.jar
+		- "jar -cfv FuerGeldautomat.jar mware_lib cash_access"
+
+2. im Ordner build/classes
+	- "java name_service/NameServiceServer 12000"
+
+
+
+3. im Ordner aufgabe3/
+
+	Beispiel: 'java -cp .:bank.jar:FuerBank.jar bank/Bank 141.22.27.102 12000 dieBank -v'
+	Beispiel: 'java -cp .:filiale.jar:FuerFiliale.jar filiale/Filiale 141.22.27.102 12000 dieBank-1 -v'
+	Beispiel: 'java -cp .:geldautomat.jar:FuerGeldautomat.jar geldautomat/Geldautomat  141.22.27.102 12000 dieBank -v'
+
+unter win:
+wenn noch Systemvariable path nicht hinzugefuegt, dann unter Mein Rechner-> Erweiterte Systemeinstellungen-> Umgebungsvariblen->Systemvariablen->Neu->Name der Variable=path und Werr=z.B C:\Program Files\Java\jdk1.7.0_40\bin->OK.
+Dann in der Console mit javac -version oder echo %PATH% testen.
+1 und 2 gleich. davor 1 kompilieren und nach 2. jars in den projektordner kopieren 
+3. java -cp bank.jar;FuerBank.jar bank.Bank 141.22.27.102 12000 dieBank -v
+	java -cp filiale.jar;FuerFiliale.jar filiale.Filiale 141.22.27.102 12000 dieBank-1 -v
+	java -cp geldautomat.jar;FuerGeldautomat.jar geldautomat.Geldautomat  141.22.27.102 12000 dieBank -v
+

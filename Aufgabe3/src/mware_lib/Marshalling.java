@@ -79,14 +79,15 @@ public class Marshalling {
     public static String encodeResolveResponse(Map<String, Object> objectData) throws IOException {
         Map<String, Object> request = new HashMap<>();
         request.put("command", RESULT);
-        request.putAll(objectData);
+        if(objectData != null) request.putAll(objectData);
         return Marshalling.marshall(request);
     }
 
     private static Object convertException(Object object){
-        if (object instanceof Exception && !(object instanceof InvalidParamException) && !(object instanceof OverdraftException)){
+        if (object instanceof Exception){
             logger.info("Converting exception " + object.toString() + " into RuntimeException");
-            return new RuntimeException((Exception)object);
+            Exception exception = (Exception)object;
+            return new RuntimeException(exception.getClass().getName() + "#" +  exception.getMessage());
         }
         return object;
     }

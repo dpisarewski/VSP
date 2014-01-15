@@ -1,6 +1,7 @@
 package mware_lib;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +28,29 @@ public class Proxy {
     private static void raiseException(Map<String, Object> result) throws Exception {
         for(Object object : (ArrayList<Object>) result.get("params")){
             if(object instanceof Exception){
-                throw (Exception) object;
+                Exception exception = (Exception) object;
+                String exceptionClassName = exception.getMessage().split("#")[0].split("\\.")[1];
+                logger.info("Converting " + exception.getMessage() + " " + exceptionClassName);
+                Constructor<?> constructor = Class.forName(getExceptionClassName(exceptionClassName)).getConstructor(new Class[]{String.class});
+                throw (Exception) constructor.newInstance(exception.getMessage());
             }
         }
+    }
+
+    private static boolean checkClass(String className){
+        try {
+            Class.forName(className);
+        } catch( ClassNotFoundException e ) {
+            return false;
+        }
+        return true;
+    }
+
+    private static String getExceptionClassName(String name){
+        String[] packages = new String[]{"bank_access", "cash_access"};
+        for(String pack: packages){
+            if(checkClass(pack + "." + name)) return pack + "." + name;
+        }
+        return "java.lang.RuntimeException";
     }
 }
